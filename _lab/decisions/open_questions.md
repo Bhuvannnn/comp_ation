@@ -1,37 +1,150 @@
-# Open questions / human gates
+# Questions for you
 
-Status legend: `OPEN` | `ORCHESTRATOR_DEFAULT` (human unavailable; recorded recommendation after research) | `LOCKED` (human answered)
+You do **not** have to answer these unless you disagree. The project already used the **recommended** choice for each one.
 
-Background/cloud agent cannot wait on interactive answers. Research completed first (`research/_RESEARCH_COMPLETE.md`). Defaults below are **not silent assumptions** — they are explicit locks the human can override.
+How to answer: copy the line under **Your answer**, change `keep recommended` to your pick, or leave it as-is.
 
-## Required gates
+---
 
-| ID | Gate | Status | Options considered | Orchestrator default | Why | If human picks otherwise |
-|----|------|--------|--------------------|----------------------|-----|--------------------------|
-| G1 | Target surface | ORCHESTRATOR_DEFAULT | public demo / local mock / hostile HTML / Electron / native desktop | **Local MemberDesk** hostile-ish HTML (tables, iframe, no test IDs, synthetic data, fault injection) | §6.3 exceptional replay on command; ToS; grader repro. `os_desktop_electron.md`, `alternatives_matrix.md`, reviewer_pass_1 | Public: extra ToS/evidence run. Electron: after core only. Native: Python stack rewrite |
-| G2 | Computer-use mechanism | ORCHESTRATOR_DEFAULT | DOM / a11y / screenshot+coords / OS injection / hybrid | **Hybrid A′**: Playwright ARIA snapshot observe → compile durable semantic locators → replay without LLM. Screenshot on failure/ambiguity. Coords = discovery escape hatch, never artifact identity | §3.1 no-clean-DOM bias; §3.2 reviewable locators; frontier + Claude alternatives review | Screenshot-first: compiler must still emit semantic locators or kill |
-| G3 | Full tech stack | ORCHESTRATOR_DEFAULT | Stack A / B / C from `tech_stack.md` | **Modified Stack A** (see `locked_stack.md`): TS + npm + Playwright 1.62.1 + OpenAI custom tools + Zod + Commander + custom loop + node:test | Adversarial pass 1: MODIFY not as-written. §7 simplicity | B: Python+desktop. C: MCP stretch after core |
-| G4 | Surface adapter seam | ORCHESTRATOR_DEFAULT | Web only vs Electron vs OS types | **`Surface` interface** with `WebSurface` implemented; `ElectronSurface` / `OsDesktopSurface` typed stubs + REPORT design | §3.7 design-not-build; Composer: Electron optional after M1–M4 | Built Electron: extra package + xvfb |
-| G5 | Language & runtime | ORCHESTRATOR_DEFAULT | TS vs Python | **TypeScript on Node 20+** (dev on 22/24; do not require native type-stripping) | Interview/Playwright/agent-coding density; desktop not being built | Python if human demands native a11y demo |
-| G6 | LLM provider / spend | ORCHESTRATOR_DEFAULT | OpenAI vs Anthropic; model ID; ceiling | **OpenAI SDK**, `DISCOVERY_MODEL` env default `gpt-5.6-terra`, custom tools not `type:computer`. Cap **$2/run**, fail closed if no key (dry-run/mock still works) | Option-2 harness compiles to locators; Terra is a real public ID. Key may be absent in this environment | Anthropic: swap provider port. Luna: plumbing only, not evidence model |
-| G7 | Orchestration | ORCHESTRATOR_DEFAULT | custom vs LangGraph vs Temporal | **Custom in-process state machine** (discover loop + replay interpreter). No LangGraph | §7; live session dies with process; interrupt re-run is a design tax | LangGraph only if human wants durable HITL across process restart |
-| G8 | Artifact schema | ORCHESTRATOR_DEFAULT | DSL vs event log+compiler vs hybrid; JSON vs YAML | **Hybrid compiler**: trajectory journal → versioned JSON capability. Ranked `SemanticLocator` + fallbacks. `schemaVersion` + `capabilityVersion` + contract JSON Schema. Locators not CSS-only | §3.2; YAML implicit types; refs must not persist | Event-log-only fails reviewability |
-| G9 | HITL UX | ORCHESTRATOR_DEFAULT | headed window vs mock console | **Real lease** on same `BrowserContext`. CLI + JSON intervention file. Scripted mock operator for tests/CI. Headed window optional demo. `browser.bind()` optional transport after smoke | §3.6 mock UI OK, control model real; headed-only fails headless graders | Local web operator console is extra polish |
-| G10 | Package/tooling | ORCHESTRATOR_DEFAULT | npm/pnpm; mono; lint/test | **npm, single package**, `tsx` + `tsc --noEmit`, `node --test`, `@playwright/test` for one smoke. No Biome required | Lowest clone friction | pnpm if human pins packageManager |
-| G11 | Stretch | ORCHESTRATOR_DEFAULT | none vs 1–2 | **None until core evidence is green.** Schema may include unused `tenantOverrides` field (cheap). Next stretch: CLI invoke-by-name, then Electron adapter | §8 | Canonicalization / MCP only after HITL+taxonomy evidence |
-| G12 | Scope cuts | ORCHESTRATOR_DEFAULT | web-now vs implement Electron/OS | **Web-now + desktop/Electron design seam.** Stub operator UI. No queues, no multi-tenant runtime, no xa11y | §3.7, §7, permission friction | Built Electron only after vertical slice |
-| G13 | Brief ambiguities | ORCHESTRATOR_DEFAULT | listed below | Recorded; no silent grading policy | — | Human can reopen |
+## Your answer sheet (edit this)
 
-## Ambiguities in Project.md (resolved as defaults)
+```
+Q1  What app do we automate?     keep recommended
+Q2  How does the AI click things? keep recommended
+Q3  Programming language?        keep recommended
+Q4  Which AI company for the one real demo run?  keep recommended
+Q5  Do you have an API key?      NO — I still need to add one
+Q6  Extra desktop app too?       keep recommended
+Q7  Extra features after the core works?  keep recommended
+Q8  Anything else you care about?  (optional)
+```
 
-- No prescribed language/LLM/lib/target (§4) → modified Stack A + MemberDesk.
-- Discovery must be real LLM live run (§4) → CLI `discover` supports `--mock` for CI and live OpenAI when `OPENAI_API_KEY` is set. Evidence for graders requires a live run later.
-- Operator console mock OK (§3.6) → JSON/CLI operator; lease is real.
-- Multi-tenant/desktop design-only (§3.7) → REPORT + `Surface` types.
-- Time box self-imposed → thin-but-real every §3 item.
+---
 
-## Spend / API keys
+## Q1. What fake “bank” app should we practice on?
 
-- No API keys assumed in this environment.
-- Scaffolding must `npm test` without a key.
-- Live discovery is gated on `OPENAI_API_KEY`.
+**In plain English:** We cannot touch a real bank. We need a stand-in website the agent can click through (search a member → see a balance).
+
+| Choice | Meaning |
+|--------|---------|
+| **A (recommended)** | A tiny website we own, called MemberDesk. Fake people only (`12345` exists, `00000` does not). We can make it fail on purpose (not found, access denied). |
+| B | A public practice site on the internet. Faster to start, but we cannot reliably demo “member not found,” and some sites forbid bots. |
+| C | A desktop app (Electron), more like old bank software. Harder to install and demo for a reviewer. |
+
+**Recommended: A — MemberDesk.**  
+This is already built.
+
+**Your answer:** `keep recommended` / B / C
+
+---
+
+## Q2. How should the AI “see” and click the screen?
+
+**In plain English:** The first run uses an AI to figure out the clicks. Later runs must replay those clicks **without** calling the AI again (that is the assignment).
+
+| Choice | Meaning |
+|--------|---------|
+| **A (recommended)** | Look at the page the way a screen reader would (names like “Look up” button), then save those names for replay. Screenshot only if stuck. |
+| B | Click by pixel position (x, y). Looks fancy, breaks if the window size changes. Bad for replay. |
+| C | Drive the real operating system mouse. Fragile, needs extra Mac/Windows permissions, hard for a reviewer to rerun. |
+
+**Recommended: A.**  
+Already implemented.
+
+**Your answer:** `keep recommended` / B / C
+
+---
+
+## Q3. What language should the project be in?
+
+| Choice | Meaning |
+|--------|---------|
+| **A (recommended)** | TypeScript / JavaScript (Node). Matches the browser tools we use. Already written. |
+| B | Python. Better if you later want a real native desktop demo. Would mean rewriting most of what is here. |
+
+**Recommended: A — TypeScript.**  
+Already implemented.
+
+**Your answer:** `keep recommended` / B
+
+---
+
+## Q4. Which AI should do the one real “discovery” run?
+
+**In plain English:** The assignment requires **one real** AI run against a live page (not a fake). After that, replay does not use AI.
+
+| Choice | Meaning |
+|--------|---------|
+| **A (recommended)** | OpenAI (model `gpt-5.6-terra` unless you say otherwise). Spend cap about **$2 per run**. |
+| B | Anthropic (Claude). Same idea; we would swap the API. |
+
+**Recommended: A — OpenAI.**  
+Code is already wired for OpenAI.
+
+**Your answer:** `keep recommended` / B
+
+---
+
+## Q5. Do you have an API key we can use?  ← this is the one you probably need to act on
+
+Without a key, tests and the **mock** demo still work. The graders want evidence of a **real** AI run.
+
+- Put the key only in a local `.env` file (never commit it).
+- `cp .env.example .env` then paste `OPENAI_API_KEY=...`
+
+**Your answer:**
+
+- [ ] Yes — I added `OPENAI_API_KEY` locally  
+- [ ] Not yet — please keep using mock until I add one  
+- [ ] I only have an Anthropic key (then Q4 should be B)
+
+---
+
+## Q6. Should we also build a real desktop/Electron app, or only describe it?
+
+**In plain English:** The assignment says: build **one** real surface; *write* how it would extend to desktop/other banks.
+
+| Choice | Meaning |
+|--------|---------|
+| **A (recommended)** | Browser only. Desktop is a stub + explanation in `REPORT.md`. |
+| B | Also ship a small Electron app. More impressive, more setup pain. |
+
+**Recommended: A.**  
+Already implemented that way.
+
+**Your answer:** `keep recommended` / B
+
+---
+
+## Q7. Any bonus features, or keep it small?
+
+The assignment says: finish the core first; at most 1–2 extras.
+
+| Choice | Meaning |
+|--------|---------|
+| **A (recommended)** | No extras until the real AI demo + replay evidence are done. |
+| B | After that, add “call a saved flow by name” (tiny API). |
+| C | After that, add a small Electron demo. |
+
+**Recommended: A.**
+
+**Your answer:** `keep recommended` / B / C
+
+---
+
+## Q8. Anything you want different? (optional)
+
+Examples: “use `pnpm` not `npm`”, “I want a visible browser window for the human-takeover demo”, “spend cap $5 not $2”.
+
+**Your answer:** _(leave blank if no)_
+
+---
+
+## What we already assumed (only change if you said so above)
+
+- One Node process, no queues/servers/databases.
+- Saved flows are JSON files, not YAML.
+- When the AI is stuck, a human can take the **same** browser session (the “operator screen” can be a simple command, not a fancy website).
+- No real banks, no real customer data.
+
+If you reply, you can just send the answer sheet at the top. Anything you skip stays on the recommended choice.
