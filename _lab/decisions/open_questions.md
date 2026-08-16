@@ -1,6 +1,6 @@
 # Questions for you
 
-You do **not** have to answer these unless you disagree. The project already used the **recommended** choice for each one.
+Background: human accepted all recommended approaches on 2026-08-16. Remaining work is sequential tickets in `_lab/agent_ops/TICKETS.md`.
 
 How to answer: copy the line under **Your answer**, change `keep recommended` to your pick, or leave it as-is.
 

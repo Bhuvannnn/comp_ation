@@ -1,31 +1,33 @@
-# Start here
+# Start here (local Cursor)
 
-This branch includes **everything**: submission code **and** the `_lab/` research/planning tree (normally gitignored).
+Recommended approaches are **accepted**. Continue in **local Cursor Agent**, not a Cloud Agent.
 
-The take-home graders should see `README.md`, `REPORT.md`, `evidence/`, and `src/` — not `_lab/`. Use this branch to review decisions; strip `_lab/` before the public assignment repo if you follow the original brief.
+## Once on your machine
 
-## Read in this order (about 30–45 minutes)
+1. GitHub Desktop → Fetch → branch `cursor/full-lab-and-scaffold-d23a`
+2. `npm install` then `npm test`
+3. Work tickets in order: `_lab/agent_ops/TICKETS.md`
 
-| # | File | Why |
-|---|------|-----|
-| 1 | `Project.md` | The assignment |
-| 2 | `_lab/00_index.md` | Map of all lab docs |
-| 3 | `_lab/research/_RESEARCH_COMPLETE.md` | Research gate + citations |
-| 4 | `_lab/decisions/open_questions.md` | **Simple questions for you** (skip if you like the defaults) |
-| 5 | `_lab/decisions/locked_stack.md` | Packages we implemented |
-| 6 | `_lab/product/PRD.md` | What to build |
-| 7 | `README.md` + `REPORT.md` | How to run + design write-up |
+## How to use multiple agents (simple)
 
-Deeper (optional): `_lab/architecture/` then `_lab/agent_ops/implementation_playbook.md`.
+Do **not** paste one giant prompt. Do **not** run several implementers on the same files at once.
 
-## What you must do
+| Chat | Who | What you type |
+|------|-----|----------------|
+| 1 | Agent (Composer or GPT) | `Do the next open ticket. Read _lab/agent_ops/TICKETS.md.` |
+| 2 | **Different** model (Claude or Grok) | `Review the last ticket only. Don’t add features. Run npm test.` |
+| 3 | Same as chat 1 | `Do the next open ticket.` |
 
-1. **Read `_lab/decisions/open_questions.md`.** It is 8 short questions. If you agree with the recommended answers, you can ignore them. The only one that usually needs you: **Q5 (API key)**.
-2. **For the one required live AI demo** (graders want this):
-   - `cp .env.example .env` and set `OPENAI_API_KEY`
-   - `npx playwright install chromium`
-   - `npx tsx src/cli/index.ts discover --goal "Look up member 12345 and read their savings balance" --live-browser`
-3. No other secrets. Do not use real bank systems or real PII.
+Repeat until T8. One ticket per chat. Tests every time.
+
+Skills already in the repo (Agent will pick them up): discover-run, replay-run, hitl-handoff, write-report, package-evidence, **next-ticket**.
+
+## The only extra thing you must provide
+
+An OpenAI key in `.env` for **T1** (the one real discovery run the assignment requires). Everything else can stay mock until then.
+
+Questions you already approved: `_lab/decisions/open_questions.md`.
+
 
 ## Run without a key
 
