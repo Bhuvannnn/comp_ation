@@ -2,7 +2,9 @@
 
 Human confirmed all recommended approaches (2026-08-16).
 
-**Rule:** One ticket per chat. Finish tests. Stop. Next chat: “Do the next open ticket.”
+**Git:** always start from `main`. One ticket = one branch named `feature/t1-live-discovery`, `feature/t2-compile-artifact`, … — never `cursor/...`.
+
+**Rule:** One ticket per chat. Finish tests. Merge to `main`. Next chat: “Do the next open ticket.”
 
 Status: `[ ]` todo · `[x]` done · `[~]` scaffold exists, still needs real work
 
@@ -12,10 +14,12 @@ Status: `[ ]` todo · `[x]` done · `[~]` scaffold exists, still needs real work
 
 **You do this (not the agent).**
 
-1. GitHub Desktop: Fetch → switch to `cursor/full-lab-and-scaffold-d23a`
+1. GitHub Desktop: Fetch origin → switch to **`main`**
 2. In a terminal in the repo:
 
 ```bash
+git checkout main
+git pull origin main
 npm install
 npm test
 npm run typecheck

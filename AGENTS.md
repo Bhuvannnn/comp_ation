@@ -2,6 +2,8 @@
 
 This repository is a computer-use take-home: **discover with an LLM → versioned artifact → deterministic replay (no LLM) → HITL lease → evidence**.
 
+**Local work order:** `_lab/agent_ops/TICKETS.md`. Branch from `main` as `feature/t1-…` (not `cursor/…`). One ticket per Agent chat. After each: `npm test`. Review with a different model. Merge back to `main`.
+
 ## Commands
 
 ```bash
