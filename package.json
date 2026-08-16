@@ -1,0 +1,32 @@
+{
+  "name": "comp-ation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Computer-use automation: LLM discovers once, deterministic replay thereafter.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start:target": "tsx src/target/memberdesk/server.ts",
+    "discover": "tsx src/cli/index.ts discover",
+    "replay": "tsx src/cli/index.ts replay",
+    "escalate": "tsx src/cli/index.ts escalate",
+    "resume": "tsx src/cli/index.ts resume",
+    "surface-smoke": "tsx src/cli/index.ts surface-smoke",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/**/*.test.ts"
+  },
+  "dependencies": {
+    "commander": "^13.1.0",
+    "openai": "^5.12.2",
+    "playwright": "1.62.1",
+    "tsx": "^4.20.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/node": "^22.17.0",
+    "typescript": "^5.9.2"
+  }
+}

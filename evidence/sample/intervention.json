@@ -1,0 +1,11 @@
+{
+  "interventionId": "04861149-9a19-462e-a5a1-8a080f94a60a",
+  "runId": "memberdesk-fake",
+  "capabilityId": "memberdesk.savings_balance_lookup",
+  "goal": "Look up member 12345",
+  "stepId": "submit_search",
+  "reason": "demo: automation paused; operator fills member id",
+  "owner": "automation",
+  "createdAt": "2026-08-16T18:46:15.831Z",
+  "status": "resumed"
+}

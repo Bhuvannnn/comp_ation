@@ -35,6 +35,11 @@ Thumbs.db
 *.swo
 
 # Evidence runtime noise (keep intentional evidence/; ignore scratch)
+evidence/discovery/
+evidence/replay/
+evidence/hitl/
+!evidence/sample/
+!evidence/README.md
 *.log
 .tmp/
 .cache/

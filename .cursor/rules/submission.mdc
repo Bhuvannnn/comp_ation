@@ -1,0 +1,10 @@
+---
+description: Submission paths and no-overbuild
+alwaysApply: true
+---
+
+Implement submission surfaces only: `src/`, `README.md`, `REPORT.md`, `evidence/`, `AGENTS.md`, tests.
+
+Never commit `_lab/` or `.env`. Never add queues, LangGraph, MCP, or a second language.
+
+Replay must not import `openai`. Capabilities must not store `ref=eN` or coordinate identity.

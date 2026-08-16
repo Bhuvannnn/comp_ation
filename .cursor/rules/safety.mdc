@@ -1,0 +1,10 @@
+---
+description: Safety, redaction, HITL lease
+globs: src/{policy,hitl,evidence}/**/*.ts
+---
+
+Every act() must check SessionLease (automation owner) and assertAllowed().
+
+Redact secrets/PII before writing evidence. Risky actions escalate rather than auto-submit.
+
+HITL: same sessionId/BrowserContext; mock operator is OK; headed window is optional.

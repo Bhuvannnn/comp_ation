@@ -1,0 +1,8 @@
+{
+  "id": "policy/memberdesk@1",
+  "origins": ["http://127.0.0.1:4173", "http://localhost:4173"],
+  "pathAllowlist": ["/", "/search", "/member", "/confirm", "/fault"],
+  "allowedActions": ["navigate", "click", "fill", "extract", "wait", "dismiss", "read"],
+  "riskyActions": ["submit_irreversible"],
+  "blockedPatterns": ["password", "ssn", "secret", "token", "authorization"]
+}

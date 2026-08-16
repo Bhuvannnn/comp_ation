@@ -1,0 +1,8 @@
+---
+description: Artifact schema and locators
+globs: src/artifact/**/*.ts
+---
+
+Capabilities are Zod JSON with schemaVersion, capabilityVersion, contractHash, ranked semantic locators, typed params/outputs, checkpoints, and declared business outcomes.
+
+Do not treat transcripts as artifacts. CSS locators need a justification string.
