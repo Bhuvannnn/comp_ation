@@ -17,7 +17,7 @@ Replay resolves ranked locators through `WebSurface` (Playwright) or `MemberDesk
 - `success` — checkpoint met, typed outputs returned
 - `business_outcome` — e.g. `member_not_found`, `permission_denied` (caller-visible, not thrown)
 - `hard_failure` — unmatched state (e.g. unexpected confirmation dialog), policy deny, timeout; includes step, expected, observed; journals ARIA snapshot + `failure.png`
-- `escalated` — lease transferred to a human; session still live
+- `escalated` — policy/risk pause: `intervention.json` written, lease transferred to human; session still live
 
 Recoverable interstitials (`session_notice`) are **journal events**, not a fifth terminal kind. They dismiss/wait within a budget, then continue.
 
@@ -27,7 +27,7 @@ Recoverable interstitials (`session_notice`) are **journal events**, not a fifth
 
 ## Escalation & handoff
 
-Stuck, risky, or unknown states write `intervention.json` and flip `SessionLease`: `automation → transitioning_to_human → human → transitioning_to_automation → automation`. Actuators refuse the wrong owner. The browser/context is **not** closed. Operator UI is a CLI/JSON mock; a headed window is optional. `browser.bind()` may attach a second client later — it is transport, not the control model. Resume re-observes before automation acts again.
+Stuck, risky, or policy-escalated states write `intervention.json` under the run evidence dir and flip `SessionLease`: `automation → transitioning_to_human → human` (then later `→ transitioning_to_automation → automation` on resume). Actuators refuse the wrong owner. The browser/context is **not** closed. Operator UI is a CLI/JSON mock; a headed window is optional. `browser.bind()` may attach a second client later — it is transport, not the control model. Resume re-observes before automation acts again. The standalone `escalate` command demos a full mock handoff on FakeSurface; replay parks on escalate and leaves the lease with the human until resume.
 
 ## Safety
 

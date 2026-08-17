@@ -1,12 +1,24 @@
 import type { ActionRequest, Observation, Surface } from "../surface/types.ts";
 import type { Assertion, Capability, Step } from "../artifact/schema.ts";
 import type { EvidenceWriter } from "../evidence/writer.ts";
+import type { SessionLease } from "../hitl/lease.ts";
+import { parkForHuman } from "../hitl/intervention.ts";
+import { randomUUID } from "node:crypto";
 
 export type TerminalResult =
   | { kind: "success"; outputs: Record<string, string> }
   | { kind: "business_outcome"; code: string; outputs: Record<string, string> }
   | { kind: "hard_failure"; stepId: string | null; code: string; expected: string; observed: string }
   | { kind: "escalated"; interventionId: string; reason: string };
+
+function missingRequiredParam(capability: Capability, params: Record<string, string>): string | null {
+  for (const p of capability.contract.params) {
+    if (!p.required) continue;
+    const v = params[p.name];
+    if (v === undefined || String(v).trim() === "") return p.name;
+  }
+  return null;
+}
 
 function matches(obs: Observation, assertion: Assertion): boolean {
   if (assertion.kind === "urlMatches") return new RegExp(assertion.pattern).test(obs.url);
@@ -67,6 +79,8 @@ function failHard(
 export type ReplayOptions = {
   /** Evidence label: FakeSurface vs Playwright MemberDesk. */
   mode?: "fake" | "live-browser";
+  /** When set, policy escalate parks the lease and writes intervention.json. */
+  lease?: SessionLease;
 };
 
 export async function replayCapability(
@@ -83,6 +97,18 @@ export async function replayCapability(
     params: { memberId: "[id]" },
     mode: options.mode ?? "fake",
   });
+
+  const missing = missingRequiredParam(capability, params);
+  if (missing) {
+    return failHard(evidence, {
+      kind: "hard_failure",
+      stepId: null,
+      code: "missing_param",
+      expected: missing,
+      observed: "absent or empty",
+    });
+  }
+
   const outputs: Record<string, string> = {};
   let recoveries = 0;
 
@@ -98,13 +124,24 @@ export async function replayCapability(
     if (!acted.ok) {
       if (acted.code === "policy_escalate") {
         const reason = acted.message ?? "risky";
+        const interventionId = randomUUID();
+        if (options.lease) {
+          parkForHuman(options.lease, evidence.dir, {
+            interventionId,
+            runId: surface.sessionId,
+            capabilityId: capability.capabilityId,
+            goal: capability.contract.summary,
+            stepId: step.id,
+            reason,
+          });
+        }
         evidence.event({
           type: "escalated",
           stepId: step.id,
-          interventionId: "policy",
+          interventionId,
           reason,
         });
-        return { kind: "escalated", interventionId: "policy", reason };
+        return { kind: "escalated", interventionId, reason };
       }
       return failHard(evidence, {
         kind: "hard_failure",

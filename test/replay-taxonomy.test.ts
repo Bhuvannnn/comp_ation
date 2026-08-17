@@ -7,7 +7,7 @@ import { EvidenceWriter } from "../src/evidence/writer.ts";
 import { compileSavingsLookupCapability } from "../src/artifact/compile.ts";
 import { replayCapability } from "../src/replay/interpreter.ts";
 import type { Surface } from "../src/surface/types.ts";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -62,6 +62,16 @@ test("unexpected confirmation is hard_failure with step context", async () => {
   evidence.writeScreenshot(shot);
 });
 
+test("missing required param is hard_failure, not business_outcome", async () => {
+  const { surface, evidence, cap } = env();
+  const result = await replayCapability(surface, cap, {}, evidence);
+  assert.equal(result.kind, "hard_failure");
+  if (result.kind === "hard_failure") {
+    assert.equal(result.code, "missing_param");
+    assert.equal(result.expected, "memberId");
+  }
+});
+
 test("FakeSurface policy deny is hard_failure with step context", async () => {
   const { surface, evidence, cap } = env();
   const deniedCap = {
@@ -86,7 +96,7 @@ test("FakeSurface policy deny is hard_failure with step context", async () => {
 });
 
 test("policy escalate is escalated terminal, not hard_failure", async () => {
-  const { evidence, cap, surface: memberSurface } = env();
+  const { evidence, cap, surface: memberSurface, lease } = env();
   const gated = await memberSurface.act({ kind: "submit_irreversible" });
   assert.equal(gated.ok, false);
   assert.equal(gated.code, "policy_escalate");
@@ -110,13 +120,29 @@ test("policy escalate is escalated terminal, not hard_failure", async () => {
     },
     async close() {},
   };
-  const result = await replayCapability(escalateSurface, cap, { memberId: "12345" }, evidence);
+  const result = await replayCapability(
+    escalateSurface,
+    cap,
+    { memberId: "12345" },
+    evidence,
+    undefined,
+    { lease },
+  );
   assert.equal(result.kind, "escalated");
   if (result.kind === "escalated") {
-    assert.equal(result.interventionId, "policy");
+    assert.ok(result.interventionId.length > 0);
     assert.match(result.reason, /irreversible/i);
   }
+  assert.equal(lease.owner(), "human");
+  assert.throws(() => lease.assertAutomationMayAct());
+  const interventionPath = join(evidence.dir, "intervention.json");
+  assert.ok(existsSync(interventionPath));
+  const intervention = JSON.parse(readFileSync(interventionPath, "utf8")) as {
+    status: string;
+    interventionId: string;
+  };
+  assert.equal(intervention.status, "open");
+  assert.equal(intervention.interventionId, result.kind === "escalated" ? result.interventionId : "");
   const journal = readFileSync(evidence.journalPath, "utf8");
   assert.match(journal, /"type":"escalated"/);
-  assert.match(journal, /"interventionId":"policy"/);
 });
