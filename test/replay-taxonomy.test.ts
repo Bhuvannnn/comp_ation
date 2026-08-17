@@ -45,3 +45,18 @@ test("known interstitial is recovered then succeeds", async () => {
   const result = await replayCapability(surface, cap, { memberId: "12345" }, evidence);
   assert.equal(result.kind, "success");
 });
+
+test("unexpected confirmation is hard_failure with step context", async () => {
+  const { surface, evidence, cap } = env();
+  const result = await replayCapability(surface, cap, { memberId: "77777" }, evidence);
+  assert.equal(result.kind, "hard_failure");
+  if (result.kind === "hard_failure") {
+    assert.equal(result.stepId, "submit_search");
+    assert.equal(result.code, "unexpected_state");
+    assert.match(result.expected, /member_not_found|permission_denied|session_notice/);
+    assert.match(result.observed, /cannot be undone|Confirm sub-account/i);
+  }
+  const shot = await surface.screenshot();
+  assert.ok(shot.byteLength > 0);
+  evidence.writeScreenshot(shot);
+});

@@ -1,0 +1,6 @@
+{"type":"replay_start","capabilityId":"memberdesk.savings_balance_lookup","params":{"memberId":"[id]"},"mode":"fake","at":"2026-08-17T00:59:24.839Z"}
+{"type":"replay_step","stepId":"open","action":"navigate","at":"2026-08-17T00:59:24.840Z"}
+{"type":"replay_step","stepId":"fill_id","action":"fill","at":"2026-08-17T00:59:24.840Z"}
+{"type":"replay_step","stepId":"submit_search","action":"click","at":"2026-08-17T00:59:24.840Z"}
+{"type":"hard_failure","stepId":"submit_search","code":"unexpected_state","expected":"member_not_found|permission_denied|recoverable:session_notice","observed":"Confirm sub-account transfer? This action cannot be undone.","snapshot":"- dialog \"Unexpected confirmation\"\n- button \"Confirm\"\n- button \"Cancel\"","at":"2026-08-17T00:59:24.840Z"}
+{"type":"screenshot","path":"failure.png","bytes":8,"at":"2026-08-17T00:59:24.841Z"}

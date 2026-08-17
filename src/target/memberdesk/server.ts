@@ -76,6 +76,19 @@ export function handleMemberDesk(url: URL, res: ServerResponse): void {
       );
       return;
     }
+    // Deterministic unexpected confirmation (not a known recoverable).
+    if (fault === "unexpected" || q === "77777") {
+      res.writeHead(200, { "content-type": "text/html" });
+      res.end(
+        html(`
+<div role="dialog" aria-label="Unexpected confirmation">
+  <p>Confirm sub-account transfer? This action cannot be undone.</p>
+  <button type="button">Confirm</button>
+  <button type="button">Cancel</button>
+</div>`),
+      );
+      return;
+    }
     const member = MEMBERS[q];
     if (!member) {
       res.writeHead(200, { "content-type": "text/html" });

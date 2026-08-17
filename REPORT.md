@@ -16,7 +16,7 @@ Replay resolves ranked locators through `WebSurface` (Playwright) or `MemberDesk
 
 - `success` — checkpoint met, typed outputs returned
 - `business_outcome` — e.g. `member_not_found`, `permission_denied` (caller-visible, not thrown)
-- `hard_failure` — unmatched state, policy deny, timeout; includes step, expected, observed
+- `hard_failure` — unmatched state (e.g. unexpected confirmation dialog), policy deny, timeout; includes step, expected, observed; journals ARIA snapshot + `failure.png`
 - `escalated` — lease transferred to a human; session still live
 
 Recoverable interstitials (`session_notice`) are **journal events**, not a fifth terminal kind. They dismiss/wait within a budget, then continue.

@@ -153,11 +153,13 @@ program
 
 function packReplaySample(fromDir: string, inputPath: string): void {
   const lower = inputPath.replace(/\\/g, "/").toLowerCase();
-  const stem = lower.includes("not-found")
-    ? "replay-not-found"
-    : lower.includes("happy")
-      ? "replay-happy"
-      : null;
+  const stem = lower.includes("hard-failure")
+    ? "replay-hard-failure"
+    : lower.includes("not-found")
+      ? "replay-not-found"
+      : lower.includes("happy")
+        ? "replay-happy"
+        : null;
   if (!stem) return;
   const sample = join(ROOT, "evidence/sample");
   mkdirSync(sample, { recursive: true });
@@ -165,6 +167,8 @@ function packReplaySample(fromDir: string, inputPath: string): void {
   if (existsSync(join(fromDir, "result.json"))) {
     copyFileSync(join(fromDir, "result.json"), join(sample, `${stem}.result.json`));
   }
+  const shot = join(fromDir, "failure.png");
+  if (existsSync(shot)) copyFileSync(shot, join(sample, `${stem}.failure.png`));
 }
 
 program
@@ -172,7 +176,7 @@ program
   .requiredOption("--artifact <path>", "capability JSON")
   .requiredOption("--input <path>", "JSON params, e.g. {\"memberId\":\"12345\"}")
   .option("--live-browser", "replay against Playwright MemberDesk")
-  .option("--fault <name>", "inject interstitial on fake surface")
+  .option("--fault <name>", "inject interstitial|unexpected on fake surface")
   .action(async (opts: { artifact: string; input: string; liveBrowser?: boolean; fault?: string }) => {
     loadEnvFile();
     const policy = loadPolicy(POLICY_PATH);
@@ -185,17 +189,21 @@ program
     const mode = opts.liveBrowser ? "live-browser" : "fake";
 
     const execute = async (surface: Surface, base: string) => {
-      if (surface instanceof MemberDeskFakeSurface && opts.fault === "interstitial") {
-        surface.injectInterstitial = true;
+      if (surface instanceof MemberDeskFakeSurface) {
+        if (opts.fault === "interstitial") surface.injectInterstitial = true;
+        if (opts.fault === "unexpected") surface.injectUnexpectedConfirm = true;
       }
       const result = await replayCapability(surface, cap, params, evidence, base, { mode });
-      evidence.writeJson("result.json", result);
-      if (opts.liveBrowser) packReplaySample(dir, opts.input);
-      console.log(JSON.stringify({ runId, result, mode }, null, 2));
       if (result.kind === "hard_failure") {
         const shot = await surface.screenshot();
         evidence.writeScreenshot(shot);
+        evidence.event({ type: "screenshot", path: "failure.png", bytes: shot.byteLength });
       }
+      evidence.writeJson("result.json", result);
+      const packHardFailure =
+        result.kind === "hard_failure" || opts.input.toLowerCase().includes("hard-failure");
+      if (opts.liveBrowser || packHardFailure) packReplaySample(dir, opts.input);
+      console.log(JSON.stringify({ runId, result, mode }, null, 2));
     };
 
     if (opts.liveBrowser) {

@@ -31,6 +31,39 @@ function resolveValue(
   return step.value.value;
 }
 
+/** Blocking dialog that is not covered by a known recoverable. */
+function isUnhandledExceptionalState(obs: Observation, capability: Capability): boolean {
+  if (!/\bdialog\b/i.test(obs.ariaSnapshot)) return false;
+  return !capability.knownRecoverables.some((r) => matches(obs, r.detect));
+}
+
+function declaredBranchSummary(step: Step): string {
+  if (!step.on?.length) return "declared success path";
+  return step.on
+    .map((b) => {
+      if (b.outcome === "business_outcome") return b.code ?? "business_outcome";
+      if (b.outcome === "recoverable") return `recoverable:${b.recoverableId ?? "?"}`;
+      return b.outcome;
+    })
+    .join("|");
+}
+
+function failHard(
+  evidence: EvidenceWriter,
+  failure: Extract<TerminalResult, { kind: "hard_failure" }>,
+  snapshot?: string,
+): TerminalResult {
+  evidence.event({
+    type: "hard_failure",
+    stepId: failure.stepId,
+    code: failure.code,
+    expected: failure.expected,
+    observed: failure.observed,
+    ...(snapshot ? { snapshot: snapshot.slice(0, 800) } : {}),
+  });
+  return failure;
+}
+
 export type ReplayOptions = {
   /** Evidence label: FakeSurface vs Playwright MemberDesk. */
   mode?: "fake" | "live-browser";
@@ -66,20 +99,22 @@ export async function replayCapability(
       if (acted.code === "policy_escalate") {
         return { kind: "escalated", interventionId: "policy", reason: acted.message ?? "risky" };
       }
-      return {
+      return failHard(evidence, {
         kind: "hard_failure",
         stepId: step.id,
         code: acted.code ?? "act_failed",
         expected: step.action,
         observed: acted.message ?? "action failed",
-      };
+      });
     }
     if (acted.extracted) Object.assign(outputs, acted.extracted);
     const obs = await surface.observe();
 
     if (step.on) {
+      let handled = false;
       for (const branch of step.on) {
         if (!matches(obs, branch.detect)) continue;
+        handled = true;
         if (branch.outcome === "business_outcome") {
           evidence.event({ type: "business_outcome", code: branch.code, stepId: step.id });
           return { kind: "business_outcome", code: branch.code ?? "unknown", outputs };
@@ -95,15 +130,32 @@ export async function replayCapability(
             });
           }
           if (recoveries > (rec?.maxAttempts ?? 1)) {
-            return {
-              kind: "hard_failure",
-              stepId: step.id,
-              code: "recovery_exhausted",
-              expected: rec?.id ?? "recoverable",
-              observed: obs.text.slice(0, 120),
-            };
+            return failHard(
+              evidence,
+              {
+                kind: "hard_failure",
+                stepId: step.id,
+                code: "recovery_exhausted",
+                expected: rec?.id ?? "recoverable",
+                observed: obs.text.slice(0, 120),
+              },
+              obs.ariaSnapshot,
+            );
           }
         }
+      }
+      if (!handled && isUnhandledExceptionalState(obs, capability)) {
+        return failHard(
+          evidence,
+          {
+            kind: "hard_failure",
+            stepId: step.id,
+            code: "unexpected_state",
+            expected: declaredBranchSummary(step),
+            observed: obs.text.slice(0, 200),
+          },
+          obs.ariaSnapshot,
+        );
       }
     }
 
@@ -115,13 +167,17 @@ export async function replayCapability(
     }
 
     if (step.checkpoint && !matches(obs, step.checkpoint) && !step.on) {
-      return {
-        kind: "hard_failure",
-        stepId: step.id,
-        code: "checkpoint_failed",
-        expected: JSON.stringify(step.checkpoint),
-        observed: obs.text.slice(0, 200),
-      };
+      return failHard(
+        evidence,
+        {
+          kind: "hard_failure",
+          stepId: step.id,
+          code: "checkpoint_failed",
+          expected: JSON.stringify(step.checkpoint),
+          observed: obs.text.slice(0, 200),
+        },
+        obs.ariaSnapshot,
+      );
     }
   }
 
@@ -130,13 +186,17 @@ export async function replayCapability(
     if (finalObs.text.includes("No such member")) {
       return { kind: "business_outcome", code: "member_not_found", outputs };
     }
-    return {
-      kind: "hard_failure",
-      stepId: null,
-      code: "success_condition_failed",
-      expected: JSON.stringify(capability.contract.successCondition),
-      observed: finalObs.text.slice(0, 200),
-    };
+    return failHard(
+      evidence,
+      {
+        kind: "hard_failure",
+        stepId: null,
+        code: "success_condition_failed",
+        expected: JSON.stringify(capability.contract.successCondition),
+        observed: finalObs.text.slice(0, 200),
+      },
+      finalObs.ariaSnapshot,
+    );
   }
   evidence.event({ type: "replay_success", outputs: { savingsBalance: outputs.savingsBalance ?? "[n/a]" } });
   return { kind: "success", outputs };

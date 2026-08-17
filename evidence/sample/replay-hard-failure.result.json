@@ -1,0 +1,7 @@
+{
+  "kind": "hard_failure",
+  "stepId": "submit_search",
+  "code": "unexpected_state",
+  "expected": "member_not_found|permission_denied|recoverable:session_notice",
+  "observed": "Confirm sub-account transfer? This action cannot be undone."
+}
