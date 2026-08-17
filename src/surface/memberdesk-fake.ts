@@ -68,17 +68,25 @@ export class MemberDeskFakeSurface extends FakeSurface {
   injectInterstitial = false;
   injectUnexpectedConfirm = false;
   private memberId = "";
+  private readonly lease: SessionLease;
+  private readonly policy: PolicyConfig;
 
   constructor(lease: SessionLease, policy: PolicyConfig) {
-    super("memberdesk-fake", searchPage(), (req) => {
-      lease.assertAutomationMayAct();
-      const decision = assertAllowed(req, policy, "http://127.0.0.1:4173");
-      if (decision.verdict === "deny") throw new Error(`POLICY_DENIED ${decision.reason}`);
-      if (decision.verdict === "escalate") throw new Error(`POLICY_ESCALATE ${decision.reason}`);
-    });
+    super("memberdesk-fake", searchPage());
+    this.lease = lease;
+    this.policy = policy;
   }
 
   override async act(request: ActionRequest): Promise<ActionResult> {
+    this.lease.assertAutomationMayAct();
+    const decision = assertAllowed(request, this.policy, "http://127.0.0.1:4173");
+    if (decision.verdict === "deny") {
+      return { ok: false, code: "policy_denied", message: decision.reason };
+    }
+    if (decision.verdict === "escalate") {
+      return { ok: false, code: "policy_escalate", message: decision.reason };
+    }
+
     const result = await super.act(request);
     if (request.kind === "navigate") {
       this.page = searchPage();

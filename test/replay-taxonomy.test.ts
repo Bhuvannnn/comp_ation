@@ -6,7 +6,8 @@ import { MemberDeskFakeSurface } from "../src/surface/memberdesk-fake.ts";
 import { EvidenceWriter } from "../src/evidence/writer.ts";
 import { compileSavingsLookupCapability } from "../src/artifact/compile.ts";
 import { replayCapability } from "../src/replay/interpreter.ts";
-import { mkdtempSync } from "node:fs";
+import type { Surface } from "../src/surface/types.ts";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -59,4 +60,63 @@ test("unexpected confirmation is hard_failure with step context", async () => {
   const shot = await surface.screenshot();
   assert.ok(shot.byteLength > 0);
   evidence.writeScreenshot(shot);
+});
+
+test("FakeSurface policy deny is hard_failure with step context", async () => {
+  const { surface, evidence, cap } = env();
+  const deniedCap = {
+    ...cap,
+    steps: [
+      {
+        id: "open_offlist",
+        action: "navigate" as const,
+        url: "https://example.com/",
+        checkpoint: { kind: "textMatches" as const, needle: "Example" },
+      },
+    ],
+  };
+  const result = await replayCapability(surface, deniedCap, { memberId: "12345" }, evidence);
+  assert.equal(result.kind, "hard_failure");
+  if (result.kind === "hard_failure") {
+    assert.equal(result.stepId, "open_offlist");
+    assert.equal(result.code, "policy_denied");
+    assert.match(result.expected, /navigate/);
+    assert.match(result.observed, /origin|allowlist/i);
+  }
+});
+
+test("policy escalate is escalated terminal, not hard_failure", async () => {
+  const { evidence, cap, surface: memberSurface } = env();
+  const gated = await memberSurface.act({ kind: "submit_irreversible" });
+  assert.equal(gated.ok, false);
+  assert.equal(gated.code, "policy_escalate");
+
+  const escalateSurface: Surface = {
+    kind: "web",
+    sessionId: "escalate-fake",
+    async observe() {
+      return {
+        url: "http://127.0.0.1:4173/",
+        title: "MemberDesk",
+        ariaSnapshot: "",
+        text: "",
+      };
+    },
+    async act() {
+      return { ok: false, code: "policy_escalate", message: "submit_irreversible is irreversible" };
+    },
+    async screenshot() {
+      return Buffer.from("fake-png");
+    },
+    async close() {},
+  };
+  const result = await replayCapability(escalateSurface, cap, { memberId: "12345" }, evidence);
+  assert.equal(result.kind, "escalated");
+  if (result.kind === "escalated") {
+    assert.equal(result.interventionId, "policy");
+    assert.match(result.reason, /irreversible/i);
+  }
+  const journal = readFileSync(evidence.journalPath, "utf8");
+  assert.match(journal, /"type":"escalated"/);
+  assert.match(journal, /"interventionId":"policy"/);
 });
