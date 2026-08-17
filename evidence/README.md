@@ -23,7 +23,7 @@ Committed sample pack:
 | `discovery/live/` | Same live pack (`run.jsonl` must contain `model_tool` events) |
 | `sample/replay-happy.*` | Success + balance (prefer `--live-browser` journals) |
 | `sample/replay-not-found.*` | `business_outcome: member_not_found` (prefer `--live-browser`) |
-| `sample/replay-hard-failure.*` | `hard_failure: unexpected_state` + snapshot/`failure.png` (member `77777`; FakeSurface sample may be a stub PNG — prefer `--live-browser` for a real shot) |
+| `sample/replay-hard-failure.*` | `hard_failure: unexpected_state` + real PNG/`failure.png` + ARIA snapshot (member `77777`; prefer `--live-browser`) |
 | `sample/intervention.json` / `hitl.run.jsonl` | Same-session HITL mock |
 
 ```bash
