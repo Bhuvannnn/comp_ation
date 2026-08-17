@@ -1,11 +1,18 @@
-import { chromium, type Browser, type BrowserContext, type Page } from "playwright";
+import { chromium, type Browser, type BrowserContext, type FrameLocator, type Locator as PwLocator, type Page } from "playwright";
 import type { ActionRequest, ActionResult, Observation, Surface } from "./types.ts";
 import type { SessionLease } from "../hitl/lease.ts";
 import { assertAllowed, type PolicyConfig } from "../policy/engine.ts";
 import type { Locator, RankedTarget } from "./types.ts";
 
+type QueryRoot = Page | FrameLocator;
+
+/**
+ * Playwright Chromium Surface. Only file that imports `playwright`.
+ * Resolves ranked semantic/CSS locators (optional iframe `framePath`) for deterministic replay.
+ */
 export class WebSurface implements Surface {
   readonly kind = "web" as const;
+  readonly binding = "playwright-chromium" as const;
   readonly sessionId: string;
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
@@ -44,7 +51,8 @@ export class WebSurface implements Surface {
 
   async act(request: ActionRequest): Promise<ActionResult> {
     this.lease.assertAutomationMayAct();
-    const origin = this.page ? new URL(this.page.url()).origin : undefined;
+    const page = this.requirePage();
+    const origin = page.url().startsWith("http") ? new URL(page.url()).origin : undefined;
     const decision = assertAllowed(request, this.policy, origin);
     if (decision.verdict === "deny") {
       return { ok: false, code: "policy_denied", message: decision.reason };
@@ -52,55 +60,81 @@ export class WebSurface implements Surface {
     if (decision.verdict === "escalate") {
       return { ok: false, code: "policy_escalate", message: decision.reason };
     }
-    const page = this.requirePage();
-    if (request.kind === "navigate" && request.url) {
-      await page.goto(request.url, { waitUntil: "domcontentloaded" });
-      return { ok: true };
+
+    try {
+      if (request.kind === "navigate" && request.url) {
+        await page.goto(request.url, { waitUntil: "domcontentloaded" });
+        return { ok: true };
+      }
+      const loc = request.target ? await this.resolve(request.target) : null;
+      if (request.kind === "fill") {
+        if (!loc) return { ok: false, code: "no_target", message: "fill requires a resolvable target" };
+        await loc.fill(request.value ?? "");
+        return { ok: true };
+      }
+      if (request.kind === "click" || request.kind === "dismiss") {
+        if (!loc) return { ok: false, code: "no_target", message: "click requires a resolvable target" };
+        const before = page.url();
+        await loc.click();
+        if (page.url() !== before) {
+          await page.waitForLoadState("domcontentloaded");
+        }
+        return { ok: true };
+      }
+      if (request.kind === "extract") {
+        const text = loc ? await loc.innerText() : await page.locator("body").innerText();
+        const m = text.match(/\$[0-9,]+\.\d{2}/);
+        return { ok: true, extracted: { savingsBalance: m?.[0] ?? text.slice(0, 80) } };
+      }
+      if (request.kind === "wait") {
+        await page.waitForTimeout(50);
+        return { ok: true };
+      }
+      return { ok: false, code: "unsupported_action", message: request.kind };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { ok: false, code: "act_failed", message: message.slice(0, 240) };
     }
-    const loc = request.target ? this.resolve(request.target) : null;
-    if (request.kind === "fill") {
-      if (!loc) return { ok: false, code: "no_target", message: "fill requires target" };
-      await loc.fill(request.value ?? "");
-      return { ok: true };
-    }
-    if (request.kind === "click" || request.kind === "dismiss") {
-      if (!loc) return { ok: false, code: "no_target", message: "click requires target" };
-      await loc.click();
-      return { ok: true };
-    }
-    if (request.kind === "extract") {
-      const text = loc ? await loc.innerText() : await page.locator("body").innerText();
-      const m = text.match(/\$[0-9,]+\.\d{2}/);
-      return { ok: true, extracted: { savingsBalance: m?.[0] ?? text.slice(0, 80) } };
-    }
-    if (request.kind === "wait") {
-      await page.waitForTimeout(50);
-      return { ok: true };
-    }
-    return { ok: false, code: "unsupported_action", message: request.kind };
   }
 
-  resolve(target: RankedTarget) {
-    const page = this.requirePage();
+  /** Prefer the first candidate that exists in the (optional) frame scope. */
+  async resolve(target: RankedTarget): Promise<PwLocator | null> {
+    const root = this.scope(target.framePath);
     for (const candidate of target.candidates) {
-      const loc = this.locator(page, candidate);
-      return loc.first();
+      const loc = this.buildLocator(root, candidate).first();
+      try {
+        // Bound wait so missing iframe/controls cannot hang replay or tests.
+        await loc.waitFor({ state: "attached", timeout: 750 });
+        return loc;
+      } catch {
+        continue;
+      }
     }
-    throw new Error("no candidates");
+    return null;
   }
 
-  private locator(page: Page, candidate: Locator) {
-    if (candidate.kind === "css") return page.locator(candidate.selector);
+  private scope(framePath?: string[]): QueryRoot {
+    const page = this.requirePage();
+    if (!framePath?.length) return page;
+    let root: QueryRoot = page;
+    for (const segment of framePath) {
+      const sel = `iframe[title="${segment}"], iframe[name="${segment}"]`;
+      root = root.frameLocator(sel);
+    }
+    return root;
+  }
+
+  private buildLocator(root: QueryRoot, candidate: Locator): PwLocator {
+    if (candidate.kind === "css") return root.locator(candidate.selector);
     if (candidate.role === "textbox" || candidate.label) {
-      return page.getByLabel(candidate.label ?? candidate.name ?? "Member ID");
+      return root.getByLabel(candidate.label ?? candidate.name ?? "Member ID");
     }
-    if (candidate.role === "button" || candidate.name) {
-      return page.getByRole((candidate.role as "button") ?? "button", {
-        name: candidate.name ?? candidate.text,
-      });
+    if (candidate.role || candidate.name) {
+      const role = (candidate.role ?? "button") as Parameters<Page["getByRole"]>[0];
+      return root.getByRole(role, { name: candidate.name ?? candidate.text });
     }
-    if (candidate.text) return page.getByText(candidate.text);
-    return page.locator("body");
+    if (candidate.text) return root.getByText(candidate.text);
+    return root.locator("body");
   }
 
   async screenshot(): Promise<Buffer> {

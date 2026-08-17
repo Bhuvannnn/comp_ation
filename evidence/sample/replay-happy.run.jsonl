@@ -1,6 +1,6 @@
-{"type":"replay_start","capabilityId":"memberdesk.savings_balance_lookup","params":{"memberId":"[id]"},"at":"2026-08-16T18:46:14.407Z"}
-{"type":"replay_step","stepId":"open","action":"navigate","at":"2026-08-16T18:46:14.410Z"}
-{"type":"replay_step","stepId":"fill_id","action":"fill","at":"2026-08-16T18:46:14.410Z"}
-{"type":"replay_step","stepId":"submit_search","action":"click","at":"2026-08-16T18:46:14.410Z"}
-{"type":"replay_step","stepId":"read_balance","action":"extract","at":"2026-08-16T18:46:14.411Z"}
-{"type":"replay_success","outputs":{"savingsBalance":"$1,284.50"},"at":"2026-08-16T18:46:14.411Z"}
+{"type":"replay_start","capabilityId":"memberdesk.savings_balance_lookup","params":{"memberId":"[id]"},"mode":"live-browser","at":"2026-08-17T00:50:00.811Z"}
+{"type":"replay_step","stepId":"open","action":"navigate","at":"2026-08-17T00:50:00.811Z"}
+{"type":"replay_step","stepId":"fill_id","action":"fill","at":"2026-08-17T00:50:00.891Z"}
+{"type":"replay_step","stepId":"submit_search","action":"click","at":"2026-08-17T00:50:00.911Z"}
+{"type":"replay_step","stepId":"read_balance","action":"extract","at":"2026-08-17T00:50:00.976Z"}
+{"type":"replay_success","outputs":{"savingsBalance":"$1,284.50"},"at":"2026-08-17T00:50:00.982Z"}

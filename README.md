@@ -36,11 +36,14 @@ npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --inp
 npx tsx src/cli/index.ts escalate
 ```
 
-Optional live-browser replay (starts MemberDesk for you):
+Live-browser replay (Playwright + MemberDesk — not FakeSurface):
 
 ```bash
 npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-happy.json --live-browser
+npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-not-found.json --live-browser
 ```
+
+Those commands write journals under `evidence/replay/<runId>/` and refresh `evidence/sample/replay-happy.*` / `replay-not-found.*` (look for `"mode":"live-browser"` on `replay_start`).
 
 ## Tests
 

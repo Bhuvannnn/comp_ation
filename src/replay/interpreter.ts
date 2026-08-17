@@ -31,14 +31,25 @@ function resolveValue(
   return step.value.value;
 }
 
+export type ReplayOptions = {
+  /** Evidence label: FakeSurface vs Playwright MemberDesk. */
+  mode?: "fake" | "live-browser";
+};
+
 export async function replayCapability(
   surface: Surface,
   capability: Capability,
   params: Record<string, string>,
   evidence: EvidenceWriter,
   originBase = "http://127.0.0.1:4173",
+  options: ReplayOptions = {},
 ): Promise<TerminalResult> {
-  evidence.event({ type: "replay_start", capabilityId: capability.capabilityId, params: { memberId: "[id]" } });
+  evidence.event({
+    type: "replay_start",
+    capabilityId: capability.capabilityId,
+    params: { memberId: "[id]" },
+    mode: options.mode ?? "fake",
+  });
   const outputs: Record<string, string> = {};
   let recoveries = 0;
 

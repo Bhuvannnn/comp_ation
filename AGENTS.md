@@ -13,10 +13,11 @@ npm run typecheck
 npx tsx src/cli/index.ts discover --goal "Look up member 12345 and read their savings balance" --mock
 npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-happy.json
 npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-not-found.json
+npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-happy.json --live-browser
 npx tsx src/cli/index.ts escalate
 ```
 
-Live discovery requires `--live-browser` plus either `OPENAI_API_KEY` or a local OpenAI-compatible server (`OPENAI_BASE_URL`, e.g. Ollama).
+Live discovery requires `--live-browser` plus either `OPENAI_API_KEY` or a local OpenAI-compatible server (`OPENAI_BASE_URL`, e.g. Ollama). Live replay (`replay --live-browser`) needs Chromium only — no API key.
 
 ## Seams
 

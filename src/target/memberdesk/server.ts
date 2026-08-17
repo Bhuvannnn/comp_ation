@@ -40,6 +40,11 @@ export function handleMemberDesk(url: URL, res: ServerResponse): void {
   }
 
   if (url.pathname === "/" || url.pathname === "/search") {
+    if (url.searchParams.get("empty") === "1") {
+      res.writeHead(200, { "content-type": "text/html" });
+      res.end(html(`<p>Results frame (empty)</p>`, "Results"));
+      return;
+    }
     const q = url.searchParams.get("memberId");
     if (!q) {
       res.writeHead(200, { "content-type": "text/html" });
@@ -123,12 +128,23 @@ export function handleMemberDesk(url: URL, res: ServerResponse): void {
 
 export function startMemberDesk(host = "127.0.0.1", port = 4173): Promise<Server> {
   const server = createServer((req, res) => {
-    const url = parseUrl(req, host, port);
+    const addr = server.address();
+    const boundPort =
+      typeof addr === "object" && addr && "port" in addr ? addr.port : port;
+    const url = parseUrl(req, host, boundPort);
     handleMemberDesk(url, res);
   });
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    server.once("error", reject);
     server.listen(port, host, () => resolve(server));
   });
+}
+
+/** Bound listen port (supports `port: 0` ephemeral binds in tests). */
+export function memberDeskPort(server: Server): number {
+  const addr = server.address();
+  if (typeof addr === "object" && addr && "port" in addr) return addr.port;
+  throw new Error("MemberDesk server has no bound port");
 }
 
 const isMain = process.argv[1]?.includes("memberdesk/server");

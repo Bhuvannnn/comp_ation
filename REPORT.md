@@ -12,7 +12,7 @@ A capability is a reviewable contract, not a transcript. It declares `schemaVers
 
 ## Determinism & error handling
 
-Replay resolves ranked locators, waits on DOM content, then classifies:
+Replay resolves ranked locators through `WebSurface` (Playwright) or `MemberDeskFakeSurface` (unit tests). CLI `--live-browser` starts MemberDesk, drives Chromium, waits on DOM content after navigation, then classifies:
 
 - `success` — checkpoint met, typed outputs returned
 - `business_outcome` — e.g. `member_not_found`, `permission_denied` (caller-visible, not thrown)

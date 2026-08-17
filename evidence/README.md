@@ -21,8 +21,8 @@ Committed sample pack:
 | `sample/discovery.run.jsonl` / `discovery.result.json` | Mock discovery (no LLM) |
 | `sample/discovery-live.run.jsonl` / `discovery-live.result.json` | Live LLM discovery (redacted copy; written by `--live-browser`) |
 | `discovery/live/` | Same live pack (`run.jsonl` must contain `model_tool` events) |
-| `sample/replay-happy.*` | Success + balance |
-| `sample/replay-not-found.*` | `business_outcome: member_not_found` |
+| `sample/replay-happy.*` | Success + balance (prefer `--live-browser` journals) |
+| `sample/replay-not-found.*` | `business_outcome: member_not_found` (prefer `--live-browser`) |
 | `sample/intervention.json` / `hitl.run.jsonl` | Same-session HITL mock |
 
 ```bash
