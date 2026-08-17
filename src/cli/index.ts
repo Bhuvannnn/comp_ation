@@ -193,7 +193,7 @@ program
         if (opts.fault === "interstitial") surface.injectInterstitial = true;
         if (opts.fault === "unexpected") surface.injectUnexpectedConfirm = true;
       }
-      const result = await replayCapability(surface, cap, params, evidence, base, { mode });
+      const result = await replayCapability(surface, cap, params, evidence, base, { mode, lease });
       if (result.kind === "hard_failure") {
         const shot = await surface.screenshot();
         evidence.writeScreenshot(shot);

@@ -22,6 +22,29 @@ export function writeIntervention(dir: string, req: InterventionRequest): string
   return path;
 }
 
+/**
+ * Pause automation for a human: write intervention.json and transfer the lease.
+ * Does not resume — caller / operator must claim and return the lease later.
+ */
+export function parkForHuman(
+  lease: SessionLease,
+  dir: string,
+  partial: Omit<InterventionRequest, "status" | "createdAt" | "owner">,
+): InterventionRequest {
+  const req: InterventionRequest = {
+    ...partial,
+    owner: lease.owner(),
+    createdAt: new Date().toISOString(),
+    status: "open",
+  };
+  writeIntervention(dir, req);
+  lease.transition("transitioning_to_human", "risky_action_confirmation", "automation", req.interventionId);
+  lease.transition("human", "operator_claimed", "system", req.interventionId);
+  req.owner = lease.owner();
+  writeIntervention(dir, req);
+  return req;
+}
+
 /** Scripted operator for CI: claim → optional mock act → resume. Same session. */
 export async function mockOperatorHandoff(
   lease: SessionLease,

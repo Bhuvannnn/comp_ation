@@ -51,6 +51,7 @@ async function withLiveReplay(memberId: string): Promise<TerminalResult> {
   try {
     return await replayCapability(ctx.surface, ctx.cap, { memberId }, ctx.evidence, ctx.base, {
       mode: "live-browser",
+      lease: ctx.lease,
     });
   } finally {
     await closeLive(ctx);
@@ -99,7 +100,7 @@ test(
         { memberId: "12345" },
         ctx.evidence,
         ctx.base,
-        { mode: "live-browser" },
+        { mode: "live-browser", lease: ctx.lease },
       );
       assert.equal(result.kind, "success");
       const journal = readFileSync(ctx.evidence.journalPath, "utf8");
@@ -242,7 +243,7 @@ test(
         { memberId: "12345" },
         ctx.evidence,
         ctx.base,
-        { mode: "live-browser" },
+        { mode: "live-browser", lease: ctx.lease },
       );
       assert.equal(result.kind, "hard_failure");
       if (result.kind === "hard_failure") {
@@ -288,7 +289,7 @@ test(
         { memberId: "12345" },
         ctx.evidence,
         ctx.base,
-        { mode: "live-browser" },
+        { mode: "live-browser", lease: ctx.lease },
       );
       assert.equal(result.kind, "hard_failure");
       if (result.kind === "hard_failure") {
