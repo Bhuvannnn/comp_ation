@@ -14,7 +14,18 @@ cp .env.example .env              # optional: OpenAI, Groq, or local Ollama (see
 
 `npm test` does **not** need an API key or Chromium.
 
-Live discovery (T1) can use a **local Ollama model** (no paid key): `brew install ollama`, `ollama serve`, `ollama pull qwen2.5:3b`, then copy `.env.example` → `.env`. Groq’s free tier also works (`OPENAI_BASE_URL=https://api.groq.com/openai/v1`).
+Live discovery can use a **local Ollama model** (no paid key): `brew install ollama`, `ollama serve`, `ollama pull qwen2.5:3b`, then copy `.env.example` → `.env`. Groq’s free tier also works (`OPENAI_BASE_URL=https://api.groq.com/openai/v1`).
+
+## Mock vs live (be honest)
+
+| Mode | Needs | What it proves |
+|------|--------|----------------|
+| `discover --mock` | nothing | Scripted FakeSurface → journal → compiled capability (CI-safe) |
+| `discover --live-browser` | Chromium + `OPENAI_API_KEY` or `OPENAI_BASE_URL` | Real LLM tool calls against MemberDesk |
+| `replay` (default) | nothing | Deterministic FakeSurface taxonomy |
+| `replay --live-browser` | Chromium only (no API key) | Same artifact against Playwright MemberDesk |
+
+Committed live discovery journals live under `evidence/discovery/live/` and `evidence/sample/discovery-live.*`. Re-running `discover --mock` refreshes sample mock journals and may rewrite `evidence/sample/capability.json` — fine for CI; keep the live pack if you care about provenance.
 
 ## Demo path
 
@@ -24,7 +35,7 @@ npx tsx src/cli/index.ts discover --goal "Look up member 12345 and read their sa
 
 # 1b) Live LLM discovery against Chromium (Ollama local or OPENAI_API_KEY)
 npx tsx src/cli/index.ts discover --goal "Look up member 12345 and read their current savings balance" --live-browser
-# writes a redacted journal to evidence/discovery/live/run.jsonl (also copied to evidence/sample/discovery-live.run.jsonl)
+# packs evidence/discovery/live/ and evidence/sample/discovery-live.*
 
 # 2) Deterministic replay — success + typed outputs
 npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-happy.json
@@ -32,12 +43,17 @@ npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --inp
 # 3) Exceptional replay — unknown member is a business outcome, not a crash
 npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-not-found.json
 
-# 4) Hard failure — unexpected confirmation dialog (member 77777)
+# 4) Permission denied — also a business_outcome
+npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-denied.json
+
+# 5) Hard failure — unexpected confirmation dialog (member 77777)
 npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-hard-failure.json
 
-# 5) HITL: pause same session → mock operator → resume
+# 6) HITL: pause same session → mock operator → resume
 npx tsx src/cli/index.ts escalate
 ```
+
+Fake-surface fault injection (optional): `--fault interstitial` or `--fault unexpected`.
 
 Live-browser replay (Playwright + MemberDesk — not FakeSurface):
 
@@ -70,10 +86,11 @@ npm run typecheck
 | `src/target/memberdesk/` | local fixture |
 | `config/policy.json` | domain/action allowlist |
 | `REPORT.md` | design write-up |
+| `evidence/` | graded demo pack (see `evidence/README.md`) |
 
 ## Safety
 
 - Actions are allowlisted (`config/policy.json`).
-- Irreversible `submit_irreversible` escalates.
+- Irreversible `submit_irreversible` escalates (writes `intervention.json`, parks the lease).
 - Journals redact secret-like keys and long digit runs.
 - Discovery spend cap: `DISCOVERY_MAX_USD` (default $2/run).
