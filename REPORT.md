@@ -35,4 +35,4 @@ Stuck, risky, or unknown states write `intervention.json` and flip `SessionLease
 
 ## Cuts
 
-Not built: Electron/OS drivers, MCP capability server, queues, multi-tenant control plane, co-browsing console, assisted LLM fallback on replay, public-site runs. Live discovery evidence is in `evidence/discovery/live/` (Ollama `qwen2.5:3b` via OpenAI-compatible Chat Completions; no paid key). Compiling the capability from that journal instead of a canned template is still pending. Next: optionally Playwright `_electron` as a second adapter.
+Not built: Electron/OS drivers, MCP capability server, queues, multi-tenant control plane, co-browsing console, assisted LLM fallback on replay, public-site runs. Live discovery evidence is in `evidence/discovery/live/` (Ollama `qwen2.5:3b` via OpenAI-compatible Chat Completions; no paid key). The capability is compiled from that journal (semantic locators; `ref=eN` dropped); known lookup outcomes are a contract overlay because one happy-path recording cannot enumerate every legitimate result. Next: optionally Playwright `_electron` as a second adapter.

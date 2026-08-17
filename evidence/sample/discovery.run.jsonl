@@ -1,8 +1,10 @@
-{"type":"discover_start","mode":"mock","goal":"Look up member 12345 and read their savings balance","at":"2026-08-16T18:46:13.712Z"}
-{"type":"replay_start","capabilityId":"memberdesk.savings_balance_lookup","params":{"memberId":"[id]"},"at":"2026-08-16T18:46:13.713Z"}
-{"type":"replay_step","stepId":"open","action":"navigate","at":"2026-08-16T18:46:13.713Z"}
-{"type":"replay_step","stepId":"fill_id","action":"fill","at":"2026-08-16T18:46:13.713Z"}
-{"type":"replay_step","stepId":"submit_search","action":"click","at":"2026-08-16T18:46:13.713Z"}
-{"type":"replay_step","stepId":"read_balance","action":"extract","at":"2026-08-16T18:46:13.713Z"}
-{"type":"replay_success","outputs":{"savingsBalance":"$1,284.50"},"at":"2026-08-16T18:46:13.713Z"}
-{"type":"artifact_written","path":"capability.json","at":"2026-08-16T18:46:13.714Z"}
+{"type":"discover_start","mode":"mock","goal":"Look up member 12345 and read their savings balance","at":"2026-08-17T00:30:58.124Z"}
+{"type":"act","kind":"navigate","url":"http://127.0.0.1:4173/","at":"2026-08-17T00:30:58.124Z"}
+{"type":"act_result","ok":true,"at":"2026-08-17T00:30:58.124Z"}
+{"type":"act","kind":"fill","target":{"kind":"semantic","role":"textbox","name":"Member ID"},"valueKind":"param","paramName":"memberId","at":"2026-08-17T00:30:58.124Z"}
+{"type":"act_result","ok":true,"at":"2026-08-17T00:30:58.124Z"}
+{"type":"act","kind":"click","target":{"kind":"semantic","role":"button","name":"Look up"},"at":"2026-08-17T00:30:58.124Z"}
+{"type":"act_result","ok":true,"at":"2026-08-17T00:30:58.125Z"}
+{"type":"act","kind":"extract","target":{"kind":"semantic","role":"status","name":"Savings balance"},"at":"2026-08-17T00:30:58.125Z"}
+{"type":"act_result","ok":true,"extracted":{"savingsBalance":"$1,284.50"},"at":"2026-08-17T00:30:58.125Z"}
+{"type":"artifact_written","path":"capability.json","note":"compiled durable locators; refs discarded","at":"2026-08-17T00:30:58.131Z"}
