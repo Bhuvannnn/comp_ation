@@ -1,0 +1,17 @@
+{"type":"discover_start","mode":"live","model":"qwen2.5:3b","goal":"Look up member 12345 and read their current savings balance","baseURL":"http://127.0.0.1:11434/v1","at":"2026-08-17T00:02:55.650Z"}
+{"type":"observe","step":0,"url":"http://127.0.0.1:4173/","ariaChars":2315,"at":"2026-08-17T00:02:55.913Z"}
+{"type":"model_usage","step":0,"tokens":1382,"spentUsd":0,"at":"2026-08-17T00:03:08.534Z"}
+{"type":"model_tool","step":0,"name":"act","kind":"fill","targetName":"Member ID","at":"2026-08-17T00:03:08.540Z"}
+{"type":"act_result","step":0,"ok":true,"at":"2026-08-17T00:03:08.931Z"}
+{"type":"observe","step":1,"url":"http://127.0.0.1:4173/","ariaChars":2335,"at":"2026-08-17T00:03:08.980Z"}
+{"type":"model_usage","step":1,"tokens":2463,"spentUsd":0,"at":"2026-08-17T00:03:19.539Z"}
+{"type":"model_tool","step":1,"name":"act","kind":"click","targetName":"Look up","at":"2026-08-17T00:03:19.544Z"}
+{"type":"act_result","step":1,"ok":true,"at":"2026-08-17T00:03:19.864Z"}
+{"type":"observe","step":2,"url":"http://127.0.0.1:4173/member?id=12345","ariaChars":584,"at":"2026-08-17T00:03:19.919Z"}
+{"type":"model_usage","step":2,"tokens":2902,"spentUsd":0,"at":"2026-08-17T00:03:25.459Z"}
+{"type":"model_tool","step":2,"name":"act","kind":"extract","targetName":"Savings balance","at":"2026-08-17T00:03:25.464Z"}
+{"type":"act_result","step":2,"ok":true,"extracted":{"savingsBalance":"$1,284.50"},"at":"2026-08-17T00:03:25.550Z"}
+{"type":"observe","step":3,"url":"http://127.0.0.1:4173/member?id=12345","ariaChars":584,"at":"2026-08-17T00:03:25.567Z"}
+{"type":"model_usage","step":3,"tokens":3345,"spentUsd":0,"at":"2026-08-17T00:03:31.135Z"}
+{"type":"model_no_tool","step":3,"content":"<tool_response>\n{\"ok\":true,\"outcome\":\"success\",\"notes\":\"Member 12345's savings balance is $1,284.50.\"}\n</tool_response>","at":"2026-08-17T00:03:31.140Z"}
+{"type":"artifact_written","path":"capability.json","note":"compiled durable locators; refs discarded","at":"2026-08-17T00:03:31.161Z"}

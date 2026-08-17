@@ -4,40 +4,67 @@ import type { EvidenceWriter } from "../evidence/writer.ts";
 import { compileSavingsLookupCapability, writeCapability } from "../artifact/compile.ts";
 import { join } from "node:path";
 
-const TOOLS = [
+/** Chat Completions tools — works on OpenAI, Groq, Ollama, and other OpenAI-compatible APIs. */
+const TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
   {
-    type: "function" as const,
-    name: "act",
-    description: "Perform one UI action on the live surface.",
-    parameters: {
-      type: "object",
-      properties: {
-        kind: { type: "string", enum: ["navigate", "click", "fill", "extract", "dismiss"] },
-        name: { type: "string", description: "Accessible name of the control" },
-        role: { type: "string" },
-        value: { type: "string" },
-        url: { type: "string" },
-        rationale: { type: "string" },
+    type: "function",
+    function: {
+      name: "act",
+      description: "Perform one UI action on the live surface.",
+      parameters: {
+        type: "object",
+        properties: {
+          kind: { type: "string", enum: ["navigate", "click", "fill", "extract", "dismiss"] },
+          name: { type: "string", description: "Accessible name of the control" },
+          role: { type: "string" },
+          value: { type: "string" },
+          url: { type: "string" },
+          rationale: { type: "string" },
+        },
+        required: ["kind", "rationale"],
+        additionalProperties: false,
       },
-      required: ["kind", "rationale"],
-      additionalProperties: false,
     },
   },
   {
-    type: "function" as const,
-    name: "done",
-    description: "Call when the goal is met or a business outcome is known.",
-    parameters: {
-      type: "object",
-      properties: {
-        outcome: { type: "string", enum: ["success", "member_not_found", "permission_denied"] },
-        notes: { type: "string" },
+    type: "function",
+    function: {
+      name: "done",
+      description: "Call when the goal is met or a business outcome is known.",
+      parameters: {
+        type: "object",
+        properties: {
+          outcome: { type: "string", enum: ["success", "member_not_found", "permission_denied"] },
+          notes: { type: "string" },
+        },
+        required: ["outcome"],
+        additionalProperties: false,
       },
-      required: ["outcome"],
-      additionalProperties: false,
     },
   },
 ];
+
+const INSTRUCTIONS =
+  "You operate MemberDesk through tools. Prefer accessible names (Member ID, Look up, Savings balance). " +
+  "Never request secrets. One action per act() call: fill the Member ID from the goal, click Look up, extract the savings balance, then call done.";
+
+type ToolArgs = {
+  kind?: string;
+  name?: string;
+  role?: string;
+  value?: string;
+  url?: string;
+  rationale?: string;
+  outcome?: string;
+  notes?: string;
+};
+
+function discoveryClient(): OpenAI {
+  const baseURL = process.env.OPENAI_BASE_URL;
+  const key = process.env.OPENAI_API_KEY ?? (baseURL ? "ollama" : undefined);
+  if (!key) throw new Error("OPENAI_API_KEY is required for live discovery (or set OPENAI_BASE_URL for a local/OpenAI-compatible server)");
+  return new OpenAI({ apiKey: key, baseURL: baseURL || undefined });
+}
 
 export async function runLiveDiscovery(
   surface: Surface,
@@ -45,55 +72,87 @@ export async function runLiveDiscovery(
   goal: string,
   originBase: string,
 ): Promise<{ capabilityPath: string }> {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("OPENAI_API_KEY is required for live discovery");
   const model = process.env.DISCOVERY_MODEL ?? "gpt-5.6-terra";
   const maxUsd = Number(process.env.DISCOVERY_MAX_USD ?? "2");
-  const client = new OpenAI({ apiKey: key });
-  evidence.event({ type: "discover_start", mode: "live", model, goal });
+  const baseURL = process.env.OPENAI_BASE_URL;
+  const local = Boolean(baseURL?.includes("127.0.0.1") || baseURL?.includes("localhost"));
+  const client = discoveryClient();
+  evidence.event({ type: "discover_start", mode: "live", model, goal, baseURL: baseURL ?? "openai" });
 
   await surface.act({ kind: "navigate", url: `${originBase}/` });
+
+  const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [{ role: "system", content: INSTRUCTIONS }];
+  let spentUsd = 0;
   let done = false;
+
   for (let step = 0; step < 12 && !done; step++) {
     const obs = await surface.observe();
-    evidence.event({ type: "observe", url: obs.url, ariaChars: obs.ariaSnapshot.length });
-    const response = await client.responses.create({
-      model,
-      input: [
-        {
-          role: "system",
-          content:
-            "You operate MemberDesk through tools. Prefer accessible names. Never request secrets. Stop at reading the savings balance.",
-        },
-        {
-          role: "user",
-          content: `Goal: ${goal}\nURL: ${obs.url}\nARIA:\n${obs.ariaSnapshot.slice(0, 6000)}\nTEXT:\n${obs.text.slice(0, 2000)}`,
-        },
-      ],
-        tools: TOOLS as never,
+    evidence.event({ type: "observe", step, url: obs.url, ariaChars: obs.ariaSnapshot.length });
+    messages.push({
+      role: "user",
+      content: `${step === 0 ? `Goal: ${goal}\n` : ""}URL: ${obs.url}\nARIA:\n${obs.ariaSnapshot.slice(0, 6000)}\nTEXT:\n${obs.text.slice(0, 2000)}`,
     });
-    const estimated = (response.usage?.total_tokens ?? 0) * 0.00002;
-    if (estimated > maxUsd) throw new Error("DISCOVERY_SPEND_CAP");
-    const call = response.output.find((item) => item.type === "function_call");
-    if (!call || call.type !== "function_call") {
-      evidence.event({ type: "model_no_tool" });
+
+    const response = await client.chat.completions.create({
+      model,
+      temperature: 0.1,
+      messages,
+      tools: TOOLS,
+      ...(local ? {} : { tool_choice: "required" as const }),
+    });
+
+    const tokens = response.usage?.total_tokens ?? 0;
+    if (!local) {
+      spentUsd += tokens * 0.00002;
+      evidence.event({ type: "model_usage", step, tokens, spentUsd: Number(spentUsd.toFixed(6)) });
+      if (spentUsd > maxUsd) throw new Error("DISCOVERY_SPEND_CAP");
+    } else {
+      evidence.event({ type: "model_usage", step, tokens, spentUsd: 0 });
+    }
+
+    const msg = response.choices[0]?.message;
+    const call = msg?.tool_calls?.[0];
+    if (!msg || !call || call.type !== "function") {
+      evidence.event({ type: "model_no_tool", step, content: msg?.content?.slice(0, 200) });
       break;
     }
-    const args = JSON.parse(call.arguments || "{}") as {
-      kind?: string;
-      name?: string;
-      role?: string;
-      value?: string;
-      url?: string;
-      rationale?: string;
-      outcome?: string;
-    };
-    evidence.event({ type: "model_tool", name: call.name, rationale: args.rationale });
-    if (call.name === "done") {
+
+    messages.push({
+      role: "assistant",
+      content: msg.content,
+      tool_calls: msg.tool_calls,
+    });
+
+    let args: ToolArgs = {};
+    try {
+      args = JSON.parse(call.function.arguments || "{}") as ToolArgs;
+    } catch {
+      evidence.event({ type: "model_tool_parse_error", step, name: call.function.name });
+      break;
+    }
+
+    evidence.event({
+      type: "model_tool",
+      step,
+      name: call.function.name,
+      kind: args.kind,
+      targetName: args.name,
+      rationale: args.rationale,
+      outcome: args.outcome,
+    });
+
+    if (call.function.name === "done") {
       done = true;
+      evidence.event({ type: "discover_done", outcome: args.outcome, notes: args.notes });
+      messages.push({
+        role: "tool",
+        tool_call_id: call.id,
+        content: JSON.stringify({ ok: true, outcome: args.outcome }),
+      });
       break;
     }
-    await surface.act({
+
+    const result = await surface.act({
       kind: (args.kind as "click") ?? "click",
       url: args.url,
       value: args.value,
@@ -101,6 +160,18 @@ export async function runLiveDiscovery(
       target: args.name
         ? { candidates: [{ kind: "semantic", role: args.role, name: args.name }] }
         : undefined,
+    });
+    evidence.event({
+      type: "act_result",
+      step,
+      ok: result.ok,
+      code: result.code,
+      extracted: result.extracted,
+    });
+    messages.push({
+      role: "tool",
+      tool_call_id: call.id,
+      content: JSON.stringify({ ok: result.ok, code: result.code, extracted: result.extracted }),
     });
   }
 

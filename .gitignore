@@ -34,8 +34,10 @@ Thumbs.db
 *.swp
 *.swo
 
-# Evidence runtime noise (keep intentional evidence/; ignore scratch)
-evidence/discovery/
+# Evidence runtime noise (keep intentional evidence/; ignore scratch UUID dirs)
+evidence/discovery/*
+!evidence/discovery/live/
+!evidence/discovery/live/**
 evidence/replay/
 evidence/hitl/
 !evidence/sample/

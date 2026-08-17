@@ -13,12 +13,14 @@ This folder is the graded demonstration pack (Project.md §6.3).
 
 Do not commit `.env`, screenshots with PII, or model API keys.
 
-Committed sample pack (mock discovery — live LLM run still needs `OPENAI_API_KEY`):
+Committed sample pack:
 
 | File | Contents |
 |------|----------|
 | `sample/capability.json` | Versioned capability |
-| `sample/discovery.run.jsonl` / `discovery.result.json` | Mock discovery |
+| `sample/discovery.run.jsonl` / `discovery.result.json` | Mock discovery (no LLM) |
+| `sample/discovery-live.run.jsonl` / `discovery-live.result.json` | Live LLM discovery (redacted copy; written by `--live-browser`) |
+| `discovery/live/` | Same live pack (`run.jsonl` must contain `model_tool` events) |
 | `sample/replay-happy.*` | Success + balance |
 | `sample/replay-not-found.*` | `business_outcome: member_not_found` |
 | `sample/intervention.json` / `hitl.run.jsonl` | Same-session HITL mock |

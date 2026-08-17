@@ -16,7 +16,7 @@ npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --inp
 npx tsx src/cli/index.ts escalate
 ```
 
-Live discovery requires `OPENAI_API_KEY` and `--live-browser`.
+Live discovery requires `--live-browser` plus either `OPENAI_API_KEY` or a local OpenAI-compatible server (`OPENAI_BASE_URL`, e.g. Ollama).
 
 ## Seams
 
