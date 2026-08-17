@@ -44,6 +44,16 @@ function noticePage(id: string): FakePage {
   };
 }
 
+function unexpectedConfirmPage(id: string): FakePage {
+  return {
+    url: `http://127.0.0.1:4173/search?memberId=${id}&fault=unexpected`,
+    title: "MemberDesk",
+    aria: '- dialog "Unexpected confirmation"\n- button "Confirm"\n- button "Cancel"',
+    text: "Confirm sub-account transfer? This action cannot be undone.",
+    fields: { "Member ID": id },
+  };
+}
+
 function memberPage(id: string, savings: string, name: string): FakePage {
   return {
     url: `http://127.0.0.1:4173/member?id=${id}`,
@@ -56,6 +66,7 @@ function memberPage(id: string, savings: string, name: string): FakePage {
 
 export class MemberDeskFakeSurface extends FakeSurface {
   injectInterstitial = false;
+  injectUnexpectedConfirm = false;
   private memberId = "";
 
   constructor(lease: SessionLease, policy: PolicyConfig) {
@@ -88,6 +99,10 @@ export class MemberDeskFakeSurface extends FakeSurface {
       }
       if (this.injectInterstitial) {
         this.page = noticePage(this.memberId);
+        return { ok: true };
+      }
+      if (this.injectUnexpectedConfirm || this.memberId === "77777") {
+        this.page = unexpectedConfirmPage(this.memberId || "77777");
         return { ok: true };
       }
       return this.lookup();

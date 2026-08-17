@@ -32,7 +32,10 @@ npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --inp
 # 3) Exceptional replay — unknown member is a business outcome, not a crash
 npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-not-found.json
 
-# 4) HITL: pause same session → mock operator → resume
+# 4) Hard failure — unexpected confirmation dialog (member 77777)
+npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-hard-failure.json
+
+# 5) HITL: pause same session → mock operator → resume
 npx tsx src/cli/index.ts escalate
 ```
 
@@ -41,9 +44,10 @@ Live-browser replay (Playwright + MemberDesk — not FakeSurface):
 ```bash
 npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-happy.json --live-browser
 npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-not-found.json --live-browser
+npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-hard-failure.json --live-browser
 ```
 
-Those commands write journals under `evidence/replay/<runId>/` and refresh `evidence/sample/replay-happy.*` / `replay-not-found.*` (look for `"mode":"live-browser"` on `replay_start`).
+Those commands write journals under `evidence/replay/<runId>/` and refresh `evidence/sample/replay-happy.*` / `replay-not-found.*` / `replay-hard-failure.*` (happy/not-found prefer `"mode":"live-browser"` on `replay_start`).
 
 ## Tests
 

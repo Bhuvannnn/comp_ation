@@ -23,6 +23,7 @@ Committed sample pack:
 | `discovery/live/` | Same live pack (`run.jsonl` must contain `model_tool` events) |
 | `sample/replay-happy.*` | Success + balance (prefer `--live-browser` journals) |
 | `sample/replay-not-found.*` | `business_outcome: member_not_found` (prefer `--live-browser`) |
+| `sample/replay-hard-failure.*` | `hard_failure: unexpected_state` + `failure.png` / ARIA snapshot (member `77777`) |
 | `sample/intervention.json` / `hitl.run.jsonl` | Same-session HITL mock |
 
 ```bash
@@ -30,5 +31,6 @@ npm test
 npx tsx src/cli/index.ts discover --goal "Look up member 12345 and read their savings balance" --mock
 npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-happy.json
 npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-not-found.json
+npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-hard-failure.json
 npx tsx src/cli/index.ts escalate
 ```
