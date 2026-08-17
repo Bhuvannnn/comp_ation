@@ -200,9 +200,9 @@ program
         evidence.event({ type: "screenshot", path: "failure.png", bytes: shot.byteLength });
       }
       evidence.writeJson("result.json", result);
-      const packHardFailure =
-        result.kind === "hard_failure" || opts.input.toLowerCase().includes("hard-failure");
-      if (opts.liveBrowser || packHardFailure) packReplaySample(dir, opts.input);
+      // Refresh committed sample journals only from live-browser runs so FakeSurface
+      // never overwrites a real hard-failure PNG (or live happy/not-found journals).
+      if (opts.liveBrowser) packReplaySample(dir, opts.input);
       console.log(JSON.stringify({ runId, result, mode }, null, 2));
     };
 
