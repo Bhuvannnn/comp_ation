@@ -1,5 +1,5 @@
-{"type":"replay_start","capabilityId":"memberdesk.savings_balance_lookup","params":{"memberId":"[id]"},"at":"2026-08-16T18:46:15.103Z"}
-{"type":"replay_step","stepId":"open","action":"navigate","at":"2026-08-16T18:46:15.103Z"}
-{"type":"replay_step","stepId":"fill_id","action":"fill","at":"2026-08-16T18:46:15.103Z"}
-{"type":"replay_step","stepId":"submit_search","action":"click","at":"2026-08-16T18:46:15.103Z"}
-{"type":"business_outcome","code":"member_not_found","stepId":"submit_search","at":"2026-08-16T18:46:15.104Z"}
+{"type":"replay_start","capabilityId":"memberdesk.savings_balance_lookup","params":{"memberId":"[id]"},"mode":"live-browser","at":"2026-08-17T00:50:01.970Z"}
+{"type":"replay_step","stepId":"open","action":"navigate","at":"2026-08-17T00:50:01.971Z"}
+{"type":"replay_step","stepId":"fill_id","action":"fill","at":"2026-08-17T00:50:02.052Z"}
+{"type":"replay_step","stepId":"submit_search","action":"click","at":"2026-08-17T00:50:02.073Z"}
+{"type":"business_outcome","code":"member_not_found","stepId":"submit_search","at":"2026-08-17T00:50:02.142Z"}

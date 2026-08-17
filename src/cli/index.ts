@@ -151,6 +151,22 @@ program
     }
   });
 
+function packReplaySample(fromDir: string, inputPath: string): void {
+  const lower = inputPath.replace(/\\/g, "/").toLowerCase();
+  const stem = lower.includes("not-found")
+    ? "replay-not-found"
+    : lower.includes("happy")
+      ? "replay-happy"
+      : null;
+  if (!stem) return;
+  const sample = join(ROOT, "evidence/sample");
+  mkdirSync(sample, { recursive: true });
+  copyFileSync(join(fromDir, "run.jsonl"), join(sample, `${stem}.run.jsonl`));
+  if (existsSync(join(fromDir, "result.json"))) {
+    copyFileSync(join(fromDir, "result.json"), join(sample, `${stem}.result.json`));
+  }
+}
+
 program
   .command("replay")
   .requiredOption("--artifact <path>", "capability JSON")
@@ -166,14 +182,16 @@ program
     const runId = randomUUID();
     const dir = join(ROOT, "evidence/replay", runId);
     const evidence = new EvidenceWriter(dir);
+    const mode = opts.liveBrowser ? "live-browser" : "fake";
 
     const execute = async (surface: Surface, base: string) => {
       if (surface instanceof MemberDeskFakeSurface && opts.fault === "interstitial") {
         surface.injectInterstitial = true;
       }
-      const result = await replayCapability(surface, cap, params, evidence, base);
+      const result = await replayCapability(surface, cap, params, evidence, base, { mode });
       evidence.writeJson("result.json", result);
-      console.log(JSON.stringify({ runId, result }, null, 2));
+      if (opts.liveBrowser) packReplaySample(dir, opts.input);
+      console.log(JSON.stringify({ runId, result, mode }, null, 2));
       if (result.kind === "hard_failure") {
         const shot = await surface.screenshot();
         evidence.writeScreenshot(shot);
