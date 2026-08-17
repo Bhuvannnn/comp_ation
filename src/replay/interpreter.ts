@@ -97,7 +97,14 @@ export async function replayCapability(
     const acted = await surface.act(req);
     if (!acted.ok) {
       if (acted.code === "policy_escalate") {
-        return { kind: "escalated", interventionId: "policy", reason: acted.message ?? "risky" };
+        const reason = acted.message ?? "risky";
+        evidence.event({
+          type: "escalated",
+          stepId: step.id,
+          interventionId: "policy",
+          reason,
+        });
+        return { kind: "escalated", interventionId: "policy", reason };
       }
       return failHard(evidence, {
         kind: "hard_failure",

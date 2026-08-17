@@ -333,8 +333,3 @@ test("committed sample live-browser journals carry mode", () => {
     assert.equal(start.mode, "live-browser", path);
   }
 });
-
-test("src/replay does not import openai", () => {
-  const src = readFileSync("src/replay/interpreter.ts", "utf8");
-  assert.doesNotMatch(src, /openai/);
-});

@@ -30,8 +30,17 @@ test("lease rejects automation actions while human owns the session", async () =
     async () => {
       assert.equal(surface.sessionId, sessionId);
       assert.throws(() => lease.assertAutomationMayAct(), LeaseViolation);
+      await assert.rejects(
+        () => surface.act({ kind: "click", target: { candidates: [{ kind: "semantic", role: "button", name: "Look up" }] } }),
+        LeaseViolation,
+      );
     },
   );
   assert.equal(lease.owner(), "automation");
   lease.assertAutomationMayAct();
+  const after = await surface.act({
+    kind: "click",
+    target: { candidates: [{ kind: "semantic", role: "button", name: "Look up" }] },
+  });
+  assert.equal(after.ok, true);
 });
