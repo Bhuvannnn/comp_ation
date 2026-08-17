@@ -1,7 +1,8 @@
 import OpenAI from "openai";
 import type { Surface } from "../surface/types.ts";
 import type { EvidenceWriter } from "../evidence/writer.ts";
-import { compileSavingsLookupCapability, writeCapability } from "../artifact/compile.ts";
+import { readFileSync } from "node:fs";
+import { compileCapabilityFromJournal, durableSemanticName, writeCapability } from "../artifact/compile.ts";
 import { join } from "node:path";
 
 /** Chat Completions tools — works on OpenAI, Groq, Ollama, and other OpenAI-compatible APIs. */
@@ -79,7 +80,9 @@ export async function runLiveDiscovery(
   const client = discoveryClient();
   evidence.event({ type: "discover_start", mode: "live", model, goal, baseURL: baseURL ?? "openai" });
 
-  await surface.act({ kind: "navigate", url: `${originBase}/` });
+  const entryUrl = `${originBase}/`;
+  evidence.event({ type: "act", kind: "navigate", url: entryUrl });
+  await surface.act({ kind: "navigate", url: entryUrl });
 
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [{ role: "system", content: INSTRUCTIONS }];
   let spentUsd = 0;
@@ -136,7 +139,7 @@ export async function runLiveDiscovery(
       step,
       name: call.function.name,
       kind: args.kind,
-      targetName: args.name,
+      targetName: durableSemanticName(args.name) ?? args.name,
       rationale: args.rationale,
       outcome: args.outcome,
     });
@@ -152,13 +155,29 @@ export async function runLiveDiscovery(
       break;
     }
 
+    const targetName = durableSemanticName(args.name);
+    if (args.kind && args.kind !== "navigate") {
+      evidence.event({
+        type: "act",
+        kind: args.kind,
+        url: args.url,
+        target: targetName
+          ? { kind: "semantic", role: args.role, name: targetName }
+          : undefined,
+        valueKind: args.kind === "fill" ? "param" : undefined,
+        paramName: args.kind === "fill" && /member\s*id/i.test(targetName ?? "") ? "memberId" : undefined,
+      });
+    } else if (args.kind === "navigate") {
+      evidence.event({ type: "act", kind: "navigate", url: args.url });
+    }
+
     const result = await surface.act({
       kind: (args.kind as "click") ?? "click",
       url: args.url,
       value: args.value,
       rationale: args.rationale,
-      target: args.name
-        ? { candidates: [{ kind: "semantic", role: args.role, name: args.name }] }
+      target: targetName
+        ? { candidates: [{ kind: "semantic", role: args.role, name: targetName }] }
         : undefined,
     });
     evidence.event({
@@ -175,7 +194,7 @@ export async function runLiveDiscovery(
     });
   }
 
-  const cap = compileSavingsLookupCapability();
+  const cap = compileCapabilityFromJournal(readFileSync(evidence.journalPath, "utf8"));
   const capabilityPath = join(evidence.dir, "capability.json");
   writeCapability(capabilityPath, cap);
   evidence.event({ type: "artifact_written", path: "capability.json", note: "compiled durable locators; refs discarded" });

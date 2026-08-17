@@ -7,7 +7,7 @@ import { loadPolicy } from "../policy/engine.ts";
 import { SessionLease } from "../hitl/lease.ts";
 import { mockOperatorHandoff } from "../hitl/intervention.ts";
 import { EvidenceWriter } from "../evidence/writer.ts";
-import { compileSavingsLookupCapability, writeCapability } from "../artifact/compile.ts";
+import { writeCapability } from "../artifact/compile.ts";
 import { parseCapability } from "../artifact/schema.ts";
 import { replayCapability } from "../replay/interpreter.ts";
 import { runMockDiscovery } from "../discovery/mock.ts";
@@ -124,6 +124,8 @@ program
         writeCapability(join(ROOT, "evidence/sample/capability.json"), parseCapability(JSON.parse(readFileSync(capabilityPath, "utf8"))));
         writeCapability(join(ROOT, "capabilities/memberdesk.savings_balance_lookup.json"), parseCapability(JSON.parse(readFileSync(capabilityPath, "utf8"))));
         evidence.writeJson("result.json", result);
+        copyFileSync(evidence.journalPath, join(ROOT, "evidence/sample/discovery.run.jsonl"));
+        copyFileSync(join(dir, "result.json"), join(ROOT, "evidence/sample/discovery.result.json"));
         console.log(JSON.stringify({ runId, result, capabilityPath }, null, 2));
         return;
       }

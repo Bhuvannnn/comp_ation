@@ -14,9 +14,12 @@ test("capability schema round-trip and contract hash", () => {
   assert.equal(cap.contractHash, computeContractHash(cap));
   const parsed = parseCapability(JSON.parse(JSON.stringify(cap)));
   assert.equal(parsed.capabilityId, "memberdesk.savings_balance_lookup");
+  assert.equal(parsed.provenance.source, "discovery");
   assert.ok(parsed.steps.every((s) => !JSON.stringify(s).includes("ref=e")));
   mkdirSync("evidence/sample", { recursive: true });
+  mkdirSync("evidence/discovery/live", { recursive: true });
   writeCapability(join("evidence/sample/capability.json"), cap);
+  writeCapability(join("evidence/discovery/live/capability.json"), cap);
   writeCapability(join("capabilities/memberdesk.savings_balance_lookup.json"), cap);
 });
 

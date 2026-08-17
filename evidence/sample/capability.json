@@ -2,11 +2,12 @@
   "schemaVersion": 1,
   "capabilityId": "memberdesk.savings_balance_lookup",
   "capabilityVersion": "1.0.0",
+  "contractHash": "sha256:d2850c2e98de0790b42a82f827ba74ebaf9831a7b21e15e4dac2aec94006727c",
   "status": "draft",
   "provenance": {
-    "recordedAt": "2026-08-16T00:00:00.000Z",
-    "source": "handwritten_fixture",
-    "notes": "Compiled from the mock/live discovery path for MemberDesk lookup."
+    "recordedAt": "2026-08-17T00:02:55.650Z",
+    "source": "discovery",
+    "notes": "Compiled from the discovery journal; ephemeral ARIA refs discarded."
   },
   "surface": {
     "kind": "web",
@@ -171,6 +172,5 @@
   ],
   "policyRef": {
     "id": "policy/memberdesk@1"
-  },
-  "contractHash": "sha256:d2850c2e98de0790b42a82f827ba74ebaf9831a7b21e15e4dac2aec94006727c"
+  }
 }
