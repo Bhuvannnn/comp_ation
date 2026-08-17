@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, existsSync, copyFileSync } from "node:fs";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { loadPolicy } from "../policy/engine.ts";
@@ -31,6 +31,21 @@ function loadEnvFile(): void {
     const k = t.slice(0, i);
     const v = t.slice(i + 1);
     if (!process.env[k]) process.env[k] = v;
+  }
+}
+
+function copyLiveDiscoveryEvidence(fromDir: string): void {
+  const liveDir = join(ROOT, "evidence/discovery/live");
+  mkdirSync(liveDir, { recursive: true });
+  for (const name of ["run.jsonl", "result.json", "capability.json"]) {
+    const src = join(fromDir, name);
+    if (existsSync(src)) copyFileSync(src, join(liveDir, name));
+  }
+  const sampleJournal = join(ROOT, "evidence/sample/discovery-live.run.jsonl");
+  copyFileSync(join(fromDir, "run.jsonl"), sampleJournal);
+  const resultSrc = join(fromDir, "result.json");
+  if (existsSync(resultSrc)) {
+    copyFileSync(resultSrc, join(ROOT, "evidence/sample/discovery-live.result.json"));
   }
 }
 
@@ -96,7 +111,11 @@ program
     mkdirSync(join(ROOT, "evidence/discovery"), { recursive: true });
     writeFileSync(join(ROOT, "evidence/discovery/latest"), runId);
 
-    const useMock = Boolean(opts.mock) || !process.env.OPENAI_API_KEY;
+    const hasLiveLlm = Boolean(process.env.OPENAI_API_KEY || process.env.OPENAI_BASE_URL);
+    if (opts.liveBrowser && !opts.mock && !hasLiveLlm) {
+      throw new Error("OPENAI_API_KEY or OPENAI_BASE_URL is required for --live-browser discovery");
+    }
+    const useMock = Boolean(opts.mock) || !hasLiveLlm;
     const useBrowser = Boolean(opts.liveBrowser) && !opts.mock;
 
     const run = async (surface: Surface, base: string) => {
@@ -109,8 +128,9 @@ program
         return;
       }
       const { capabilityPath } = await runLiveDiscovery(surface, evidence, opts.goal, base);
-      evidence.writeJson("result.json", { kind: "compiled", capabilityPath });
-      console.log(JSON.stringify({ runId, capabilityPath }, null, 2));
+      evidence.writeJson("result.json", { kind: "compiled", capabilityPath: "capability.json", mode: "live" });
+      copyLiveDiscoveryEvidence(dir);
+      console.log(JSON.stringify({ runId, capabilityPath, packed: "evidence/discovery/live" }, null, 2));
     };
 
     if (useBrowser) {

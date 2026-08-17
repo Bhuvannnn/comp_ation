@@ -9,10 +9,12 @@ Proxy target: **MemberDesk**, a local hostile-ish HTML servicing console (tables
 ```bash
 npm install
 npx playwright install chromium   # only needed for --live-browser / surface-smoke
-cp .env.example .env              # add OPENAI_API_KEY for a live discovery evidence run
+cp .env.example .env              # optional: OpenAI, Groq, or local Ollama (see below)
 ```
 
 `npm test` does **not** need an API key or Chromium.
+
+Live discovery (T1) can use a **local Ollama model** (no paid key): `brew install ollama`, `ollama serve`, `ollama pull qwen2.5:3b`, then copy `.env.example` → `.env`. Groq’s free tier also works (`OPENAI_BASE_URL=https://api.groq.com/openai/v1`).
 
 ## Demo path
 
@@ -20,8 +22,9 @@ cp .env.example .env              # add OPENAI_API_KEY for a live discovery evid
 # 1) Discovery (mock / CI — still produces a real artifact + journal)
 npx tsx src/cli/index.ts discover --goal "Look up member 12345 and read their savings balance" --mock
 
-# 1b) Live LLM discovery against headed/headless Chromium (requires OPENAI_API_KEY)
-npx tsx src/cli/index.ts discover --goal "Look up member 12345 and read their savings balance" --live-browser
+# 1b) Live LLM discovery against Chromium (Ollama local or OPENAI_API_KEY)
+npx tsx src/cli/index.ts discover --goal "Look up member 12345 and read their current savings balance" --live-browser
+# writes a redacted journal to evidence/discovery/live/run.jsonl (also copied to evidence/sample/discovery-live.run.jsonl)
 
 # 2) Deterministic replay — success + typed outputs
 npx tsx src/cli/index.ts replay --artifact evidence/sample/capability.json --input fixtures/replay-happy.json
@@ -51,7 +54,7 @@ npm run typecheck
 | Path | Seam |
 |------|------|
 | `src/surface/` | `Surface` (Web implemented; Electron/OS stubs) |
-| `src/discovery/` | observe → decide → act (OpenAI custom tools or `--mock`) |
+| `src/discovery/` | observe → decide → act (Chat Completions tools or `--mock`) |
 | `src/artifact/` | Zod capability schema + compiler |
 | `src/replay/` | interpreter — **must not import `openai`** |
 | `src/policy/` | allowlist + redaction |

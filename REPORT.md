@@ -2,7 +2,7 @@
 
 ## Architecture
 
-This system is a single Node process with two engines over one `Surface` seam. **Discovery** may call an LLM (OpenAI Responses API, custom tools — not the vendor `computer` tool). A **compiler** turns a successful trajectory into a Zod-validated JSON capability. **Replay** interprets that file with no model import. Every `act()` checks a **session lease** and an **allowlist**. Evidence is JSONL + optional screenshots under `/evidence/`.
+This system is a single Node process with two engines over one `Surface` seam. **Discovery** may call an LLM via OpenAI-compatible Chat Completions function tools (OpenAI, Groq, or local Ollama — not the vendor `computer` tool). A **compiler** turns a successful trajectory into a Zod-validated JSON capability. **Replay** interprets that file with no model import. Every `act()` checks a **session lease** and an **allowlist**. Evidence is JSONL + optional screenshots under `/evidence/`.
 
 Trade-off: implement one web surface thoroughly (local MemberDesk) and keep Electron/OS as typed stubs. That matches Project.md §3.7 (“design, not necessarily build”) and §7 (no scaling infrastructure). Orchestration is a custom reducer with explicit edge tables, not LangGraph: the live browser dies with the process, so a durable graph runtime does not buy the resource that matters.
 
@@ -35,4 +35,4 @@ Stuck, risky, or unknown states write `intervention.json` and flip `SessionLease
 
 ## Cuts
 
-Not built: Electron/OS drivers, MCP capability server, queues, multi-tenant control plane, co-browsing console, assisted LLM fallback on replay, public-site runs. Next: one live OpenAI evidence run in `/evidence/discovery/` when an API key is present; then optionally Playwright `_electron` as a second adapter.
+Not built: Electron/OS drivers, MCP capability server, queues, multi-tenant control plane, co-browsing console, assisted LLM fallback on replay, public-site runs. Live discovery evidence is in `evidence/discovery/live/` (Ollama `qwen2.5:3b` via OpenAI-compatible Chat Completions; no paid key). Compiling the capability from that journal instead of a canned template is still pending. Next: optionally Playwright `_electron` as a second adapter.
